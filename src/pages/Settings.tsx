@@ -19,7 +19,6 @@ const Settings = () => {
         <TabsList className="bg-card border border-border">
           <TabsTrigger value="platform">Platform Settings</TabsTrigger>
           <TabsTrigger value="notifications">Email & Notifications</TabsTrigger>
-          <TabsTrigger value="integrations">Game Integrations</TabsTrigger>
           <TabsTrigger value="permissions">Permissions & Roles</TabsTrigger>
         </TabsList>
 
@@ -32,16 +31,16 @@ const Settings = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="platform-name">Platform Name</Label>
-                <Input id="platform-name" placeholder="Enter platform name" />
+                <Label htmlFor="hero-text">Hero Text</Label>
+                <Input id="hero-text" placeholder="Enter hero text" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="platform-tagline">Tagline</Label>
-                <Input id="platform-tagline" placeholder="Your platform's tagline" />
+                <Label htmlFor="description">Description</Label>
+                <Input id="description" placeholder="Enter description" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="platform-description">Description</Label>
-                <Textarea id="platform-description" placeholder="Describe your platform" rows={4} />
+                <Label htmlFor="about-us">About Us</Label>
+                <Textarea id="about-us" placeholder="Tell us about your platform" rows={4} />
               </div>
             </CardContent>
           </Card>
@@ -161,63 +160,6 @@ const Settings = () => {
                 </div>
                 <Switch />
               </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end">
-            <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </Button>
-          </div>
-        </TabsContent>
-
-        {/* Game Integrations */}
-        <TabsContent value="integrations" className="space-y-6">
-          <Card className="bg-gradient-card border-border">
-            <CardHeader>
-              <CardTitle>Game Server APIs</CardTitle>
-              <CardDescription>Connect to game servers and stats APIs</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="riot-api">Riot Games API Key</Label>
-                <Input id="riot-api" placeholder="RGAPI-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="steam-api">Steam Web API Key</Label>
-                <Input id="steam-api" placeholder="Your Steam API key" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="epic-api">Epic Games API Key</Label>
-                <Input id="epic-api" placeholder="Your Epic Games API key" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="valorant-api">Valorant API Key</Label>
-                <Input id="valorant-api" placeholder="Your Valorant API key" type="password" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-card border-border">
-            <CardHeader>
-              <CardTitle>Custom Integrations</CardTitle>
-              <CardDescription>Add custom game server integrations</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="custom-name">Integration Name</Label>
-                <Input id="custom-name" placeholder="Enter integration name" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custom-endpoint">API Endpoint</Label>
-                <Input id="custom-endpoint" placeholder="https://api.example.com" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="custom-key">API Key</Label>
-                <Input id="custom-key" placeholder="Your API key" type="password" />
-              </div>
-              <Button variant="outline">Add Integration</Button>
             </CardContent>
           </Card>
 
