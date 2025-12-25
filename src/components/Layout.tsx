@@ -50,24 +50,29 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
+            const showSeparator = item.path === "/shogun";
             
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300",
-                  isActive
-                    ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              <div key={item.path}>
+                {showSeparator && (
+                  <div className="my-2 border-t border-sidebar-border" />
                 )}
-              >
-                <Icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
-              </Link>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300",
+                    isActive
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-glow"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              </div>
             );
           })}
         </nav>
