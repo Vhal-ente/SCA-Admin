@@ -155,9 +155,11 @@ const LeaguePage = () => {
             </div>
 
             <div className="mt-4 flex justify-between items-center">
-              <span className="font-bold">{league.prize}</span>
-              <Button variant="ghost" onClick={() => handleEditLeague(league)}>
-                View
+              <span className="font-bold text-accent text-lg">{league.prize}</span>
+              <Button variant="ghost"
+               className="text-primary hover:text-primary hover:bg-primary/10"
+              onClick={() => handleEditLeague(league)}>
+                View Details
               </Button>
             </div>
           </Card>
