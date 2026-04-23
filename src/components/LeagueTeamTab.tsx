@@ -2,6 +2,7 @@ import React from "react";
 
 const teams = [
   {
+    logo: "/path/to/void-runners-logo.png",
     name: "VOID RUNNERS",
     tier: "Tier 1 • NA East",
     players: "5 / 6",
@@ -9,6 +10,7 @@ const teams = [
     losses: 4,
   },
   {
+    logo: "/path/to/neon-phantoms-logo.png",
     name: "NEON PHANTOMS",
     tier: "Tier 1 • EU West",
     players: "6 / 6",
@@ -16,6 +18,7 @@ const teams = [
     losses: 7,
   },
   {
+    logo: "/path/to/glitch-legion-logo.png",
     name: "GLITCH LEGION",
     tier: "Tier 2 • SEA",
     players: "5 / 6",
@@ -23,6 +26,7 @@ const teams = [
     losses: 10,
   },
   {
+    logo: "/path/to/static-shock-logo.png",
     name: "STATIC SHOCK",
     tier: "Tier 1 • NA West",
     players: "6 / 6",
@@ -30,6 +34,7 @@ const teams = [
     losses: 13,
   },
   {
+    logo: "/path/to/ronin-ghosts-logo.png",
     name: "RONIN GHOSTS",
     tier: "Tier 1 • SA",
     players: "4 / 6",
@@ -38,7 +43,7 @@ const teams = [
   },
 ];
 
-export const TeamsTab =({ activeTab }) => {
+export const TeamsTab = ({ activeTab }) => {
   if (activeTab !== "TEAMS") return null;
 
   return (
@@ -95,9 +100,16 @@ export const TeamsTab =({ activeTab }) => {
                 className="border-b border-[#1c2235] hover:bg-[#141a2f]"
               >
                 <td className="p-3">
-                  <div>
-                    <p className="font-semibold">{team.name}</p>
-                    <p className="text-xs text-gray-400">{team.tier}</p>
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={team.logo}
+                      alt={team.name}
+                      className="w-9 h-9 rounded-md border border-[#2a2e42]"
+                    />
+                    <div>
+                      <p className="font-semibold">{team.name}</p>
+                      <p className="text-xs text-gray-400">{team.tier}</p>
+                    </div>
                   </div>
                 </td>
                 <td className="p-3">{team.players}</td>
@@ -125,4 +137,4 @@ export const TeamsTab =({ activeTab }) => {
       </div>
     </div>
   );
-}
+};
