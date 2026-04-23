@@ -72,7 +72,7 @@ export const TeamsTab = ({ activeTab }) => {
         ].map((stat, i) => (
           <div
             key={i}
-            className="bg-[#171924] p-6 space-y-4 rounded-lg border border-sidebar"
+            className="bg-[#2C2C2C] p-6 space-y-4 rounded-lg border border-sidebar"
           >
             <p className="text-xs text-gray-400 mb-1">{stat.label}</p>
             <h3 className="text-lg font-semibold">{stat.value}</h3>
@@ -81,7 +81,7 @@ export const TeamsTab = ({ activeTab }) => {
       </div>
 
       {/* Table */}
-      <div className="bg-[#171924] rounded-lg border border-[#1c2235] overflow-hidden">
+      <div className="bg-[#2C2C2C] rounded-lg border border-[#1c2235] overflow-hidden">
         <table className="w-full text-sm">
           <thead className="text-gray-400 border-b border-[#1c2235] uppercase">
             <tr>
@@ -97,7 +97,7 @@ export const TeamsTab = ({ activeTab }) => {
             {teams.map((team, i) => (
               <tr
                 key={i}
-                className="border-b border-[#1c2235] hover:bg-[#141a2f]"
+                className="border-b border-[#1c2235] hover:bg-[#2A2A2A] transition-colors cursor-pointer"
               >
                 <td className="p-3">
                   <div className="flex items-center gap-3">
@@ -126,12 +126,12 @@ export const TeamsTab = ({ activeTab }) => {
           <span>Showing 5 of 32 Teams</span>
 
           <div className="flex gap-2">
-            <button className="px-2 py-1 bg-[#11162a] rounded">Prev</button>
+            <button className="px-2 py-1 bg-background rounded">Prev</button>
             <button className="px-2 py-1 bg-[#00FFC6] text-black rounded">
               1
             </button>
-            <button className="px-2 py-1 bg-[#11162a] rounded">2</button>
-            <button className="px-2 py-1 bg-[#11162a] rounded">Next</button>
+            <button className="px-2 py-1 bg-background rounded">2</button>
+            <button className="px-2 py-1 bg-background rounded">Next</button>
           </div>
         </div>
       </div>
