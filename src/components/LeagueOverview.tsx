@@ -9,8 +9,10 @@ import {
   Upload,
   ChevronDown,
 } from "lucide-react";
-import { TeamsTab } from "./LeagueTeamTab";
+import { TeamsTab } from "./LeagueTeam";
 import SettingsTab from "./LeagueSettings";
+import LeagueStandings from "./LeagueStanding";
+import MatchTab from "./LeagueMatch";
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -363,6 +365,8 @@ export const Overview = ({
       {/* Teams Tab */}
       <TeamsTab activeTab={activeTab} />
       <SettingsTab activeTab={activeTab} />
+      <LeagueStandings activeTab={activeTab} />
+      <MatchTab activeTab={activeTab} />
     </div>
   );
 };

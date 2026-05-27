@@ -4,8 +4,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "../components/ui/dialog";
-import { Input } from "../components/ui/input";
+} from "./ui/dialog";
+import { Input } from "./ui/input";
 import { FiEdit2, FiTrash2, FiUpload } from "react-icons/fi";
 
 const initialTeams = [
