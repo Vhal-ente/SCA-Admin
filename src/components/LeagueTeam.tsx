@@ -102,7 +102,7 @@ export const TeamsTab = ({ activeTab }) => {
 
   return (
     <>
-      <div className="bg-sidebar text-white p-6 rounded-xl border border-[#1c2235]">
+      <div className="bg-[#0f141c] text-white p-6 rounded-xl border border-[#2a2e42]">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -122,7 +122,7 @@ export const TeamsTab = ({ activeTab }) => {
             { label: "TOTAL PRIZE POOL", value: "$50,000" },
             { label: "PENDING VERIFICATION", value: 4 },
           ].map((stat, i) => (
-            <div key={i} className="bg-[#2C2C2C] p-6 rounded-lg border border-sidebar">
+            <div key={i} className="bg-[#222532] p-6 rounded-lg border border-[#2a2e42]">
               <p className="text-xs text-gray-400 mb-1">{stat.label}</p>
               <h3 className="text-lg font-semibold">{stat.value}</h3>
             </div>
@@ -130,7 +130,7 @@ export const TeamsTab = ({ activeTab }) => {
         </div>
 
         {/* Table */}
-        <div className="bg-[#2C2C2C] rounded-lg border border-[#1c2235] overflow-hidden">
+        <div className="bg-[#0f141c] rounded-lg border border-[#1c2235] overflow-hidden">
           <table className="w-full text-sm text-left">
             <thead className="text-gray-400 border-b border-[#1c2235] uppercase">
               <tr>
@@ -143,7 +143,7 @@ export const TeamsTab = ({ activeTab }) => {
             </thead>
             <tbody>
               {teamList.map((team, i) => (
-                <tr key={i} className="border-b border-[#1c2235] hover:bg-[#2A2A2A]">
+                <tr key={i} className="border-b border-[#1c2235] hover:bg-[#141b26]/30 ">
                   <td className="p-3">
                     <div className="flex items-center gap-3">
                       <img src={team.logo} alt="" className="w-9 h-9 rounded-md object-cover border border-[#2a2e42]" />

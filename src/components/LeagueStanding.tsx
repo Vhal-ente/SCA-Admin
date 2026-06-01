@@ -49,7 +49,7 @@ export default function LeagueStandings({ activeTab }: { activeTab: string }) {
             </button>
           </div>
         </div>
-      <section className="bg-[#2C2C2C] border border-[#2C2C2C]/40 rounded-2xl p-6 flex flex-col space-y-6">
+      <section className="bg-[#0f141c] border border-[#2C2C2C]/40 rounded-2xl p-6 flex flex-col space-y-6">
         {/* Standings Table Grid */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
@@ -68,7 +68,7 @@ export default function LeagueStandings({ activeTab }: { activeTab: string }) {
               {standingsData.map((team) => (
                 <tr 
                   key={team.position} 
-                  className={`hover:bg-[#2A2A2A] transition-colors group ${
+                  className={`hover:bg-[#141b26]/30  transition-colors group ${
                     team.position === '01' ? 'bg-[#142324]/10' : ''
                   }`}
                 >
@@ -113,7 +113,7 @@ export default function LeagueStandings({ activeTab }: { activeTab: string }) {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Card 1: Total Matches */}
-        <div className="bg-[#2C2C2C] border border-[#2C2C2C]/40 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
+        <div className="bg-[#0f141c] border border-[#2C2C2C]/40 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Matches</p>
@@ -132,7 +132,7 @@ export default function LeagueStandings({ activeTab }: { activeTab: string }) {
         </div>
 
         {/* Card 2: Avg Score */}
-        <div className="bg-[#2C2C2C] border border-[#2C2C2C]/40 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-[#0f141c] border border-[#2C2C2C]/40 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Avg Score</p>
@@ -151,7 +151,7 @@ export default function LeagueStandings({ activeTab }: { activeTab: string }) {
         </div>
 
         {/* Card 3: Active Pro-Players */}
-        <div className="bg-[#2C2C2C] border border-[#2C2C2C]/40 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
+        <div className="bg-[#0f141c] border border-[#2C2C2C]/40 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Active Pro-Players</p>

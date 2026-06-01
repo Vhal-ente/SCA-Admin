@@ -53,7 +53,7 @@ export default function MatchTab( { activeTab }: { activeTab: string }) {
       {/* --- TOP METRICS CARDS ROW --- */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Matches */}
-        <div className="bg-[#2C2C2C] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col justify-between">
+        <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Total Matches</p>
             <p className="text-3xl font-black text-white mt-1 tracking-tight">128</p>
@@ -62,7 +62,7 @@ export default function MatchTab( { activeTab }: { activeTab: string }) {
         </div>
 
         {/* Completed */}
-        <div className="bg-[#2C2C2C] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col justify-between">
+        <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Completed</p>
             <p className="text-3xl font-black text-white mt-1 tracking-tight">84</p>
@@ -75,7 +75,7 @@ export default function MatchTab( { activeTab }: { activeTab: string }) {
         </div>
 
         {/* Live Now */}
-        <div className="bg-[#2C2C2C] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col justify-between relative">
+        <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col justify-between relative">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Live Now</p>
             <p className="text-3xl font-black text-rose-500 mt-1 tracking-tight">03</p>
@@ -84,7 +84,7 @@ export default function MatchTab( { activeTab }: { activeTab: string }) {
         </div>
 
         {/* Scheduled */}
-        <div className="bg-[#2C2C2C] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col justify-between">
+        <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col justify-between">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Scheduled</p>
             <p className="text-3xl font-black text-white mt-1 tracking-tight">41</p>
@@ -96,7 +96,7 @@ export default function MatchTab( { activeTab }: { activeTab: string }) {
       </section>
 
       {/* --- ACTIVE SCHEDULE CONTROL TABLE --- */}
-      <section className="bg-[#2C2C2C] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col space-y-4">
+      <section className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-5 flex flex-col space-y-4">
         {/* Table Filter Top Bar */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <h3 className="text-sm font-bold text-white tracking-wide">Active Schedule</h3>
@@ -241,7 +241,7 @@ export default function MatchTab( { activeTab }: { activeTab: string }) {
           <h4 className="text-xs font-bold uppercase tracking-wider text-white">Next Up</h4>
           <div className="flex-1 flex flex-col space-y-3">
             {upcomingMatches.map((upMatch, idx) => (
-              <div key={idx} className="bg-[#2C2C2C] border border-[#1e293b]/40 rounded-xl p-4 flex flex-col space-y-3 justify-between relative">
+              <div key={idx} className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-4 flex flex-col space-y-3 justify-between relative">
                 
                 {/* Meta details Header */}
                 <div className="flex justify-between items-center text-[10px] text-slate-500 font-bold tracking-wide">

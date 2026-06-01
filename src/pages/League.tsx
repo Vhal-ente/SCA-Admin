@@ -38,6 +38,15 @@ const LeaguePage = () => {
       teams: 16,
       prize: "$30,000",
     },
+    {
+      id: 3,
+      name: "Valorant Champions League",
+      game: "Valorant",
+      status: "Completed",
+      season: "Winter 2024",
+      teams: 10,
+      prize: "$50,000",
+    }
   ]);
 
   const [selectedLeague, setSelectedLeague] = useState(null);

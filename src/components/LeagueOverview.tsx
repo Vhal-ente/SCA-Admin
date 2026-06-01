@@ -16,7 +16,7 @@ import MatchTab from "./LeagueMatch";
 
 // ─── Constants ───────────────────────────────────────────────
 
-const cardClass = "bg-[#171924] p-6 rounded-xl border border-[#2a2e42]";
+const cardClass = "bg-[#0f141c] p-6 rounded-xl border border-[#2a2e42]";
 const primaryBtn =
   "px-6 py-2.5 bg-[#00FFC6] text-[#003b2f] rounded font-semibold hover:scale-[1.02] transition-all";
 const secondaryBtn =
