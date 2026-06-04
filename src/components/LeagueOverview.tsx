@@ -108,7 +108,7 @@ export const Overview = ({
           <>
       <div className="relative h-52 mb-6 rounded-xl overflow-hidden">
         <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsNpezIyvYkNgk7nfe2OaxbcoidVZAW8ZrUfVhCSljXXtyitzZtgmr_Tf7SkM506b__z0fxYfV0sAHpm2p7WUX4MvwZGcMqHl2rC433NUGBoQLphuRLTBolZOusp3JBeqQVV82dqVoT0i9lJ6FqArBgqGLUHFtGI42upsIgrnzLBSJ9C9Mt7kxQknEzbDyykJoEh7lMKz1NRkARTZdqlyiJEsMPeRA5p35cnutggFZ0KDpDUIhnz-P2AFYfgmvNmRTsS-sbJ7gWa4"
+          src="/arena.png"
           alt="hero"
           className="w-full h-full object-cover opacity-40"
         />

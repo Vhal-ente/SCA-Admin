@@ -30,7 +30,7 @@ const navItems = [
   { icon: Settings, label: "Settings", path: "/settings" },
   { icon: DollarSign, label: "Finance", path: "/finance" },
   { icon: Newspaper, label: "News", path: "/news" },
-  { icon: Shield, label: "Shogun", path: "/shogun" },
+  { icon: Shield, label: "Shogun" },
   { icon: Gamepad2, label: "Games and players", path: "/games" },
   { icon: Calendar, label: "Schedule", path: "/schedule" },
 ];
@@ -56,7 +56,7 @@ const NavContent = ({ onItemClick }: { onItemClick?: () => void }) => {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
-          const showSeparator = item.path === "/shogun";
+          const showSeparator = item.label === "Shogun";
           
           return (
             <div key={item.path}>

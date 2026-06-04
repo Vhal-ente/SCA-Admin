@@ -11,7 +11,8 @@ import Users from "./pages/Users";
 import Settings from "./pages/Settings";
 import Finance from "./pages/Finance";
 import News from "./pages/News";
-import Shogun from "./pages/Shogun";
+import LoginPage from "./pages/Login";
+import SignupPage from "./pages/Signup";
 import Games from "./pages/Games";
 import Schedule from "./pages/Schedule";
 import NotFound from "./pages/NotFound";
@@ -32,9 +33,11 @@ const App = () => (
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
           <Route path="/finance" element={<Layout><Finance /></Layout>} />
           <Route path="/news" element={<Layout><News /></Layout>} />
-          <Route path="/shogun" element={<Layout><Shogun /></Layout>} />
+          {/* <Route path="/shogun" element={<Layout><Shogun /></Layout>} /> */}
           <Route path="/games" element={<Layout><Games /></Layout>} />
           <Route path="/schedule" element={<Layout><Schedule /></Layout>} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
