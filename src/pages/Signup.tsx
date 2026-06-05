@@ -113,7 +113,7 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              <Button type="submit" onClick={handleSignupSubmit} className="w-full bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] font-black text-xs uppercase tracking-widest h-10 rounded-xl flex items-center justify-center space-x-1.5 transition-all">
+              <Button type="submit" className="w-full bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] font-black text-xs uppercase tracking-widest h-10 rounded-xl flex items-center justify-center space-x-1.5 transition-all">
                 <span>Create Operative Account</span>
                 <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
               </Button>

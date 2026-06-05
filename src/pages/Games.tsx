@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Plus, ArrowRight, Edit, Trash2, MoreVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { GameModal, Game } from "@/components/GameModal";
-import { PlayerModal, Player } from "@/components/PlayerModal";
+import { GameModal, Game } from "@/components/modals/GameModal";
+import { PlayerModal, Player } from "@/components/modals/PlayerModal";
 import {
   AlertDialog,
   AlertDialogAction,

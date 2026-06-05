@@ -4,14 +4,10 @@ import {
   MoreVertical, 
   Shield, 
   Ban, 
-  UserCheck, 
-  Users as UsersIcon, 
   Edit, 
   Trash2,
   Search,
   Filter,
-  ChevronLeft,
-  ChevronRight,
   TrendingUp,
   Swords,
   Ticket
@@ -28,12 +24,44 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import UserActionModals from "@/components/UserActionModals";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import UserActionModals from "@/components/modals/UserActionModals";
 
 type ModalType = "add-player" | "edit-player" | "add-admin" | "edit-team" | "delete" | null;
 
+// Mock Datasets with matching interface structures
+const INITIAL_PLAYERS = [
+  { id: '1', name: 'Player1', team: 'Team Alpha', rank: 'Diamond', wins: 150, losses: 120, status: 'Active' },
+  { id: '2', name: 'ShadowHunter', team: 'Viper Esports', rank: 'Grandmaster', wins: 210, losses: 45, status: 'Active' },
+  { id: '3', name: 'GlitchOps', team: 'Neon Legion', rank: 'Platinum', wins: 98, losses: 82, status: 'Offline' },
+];
+
+const INITIAL_TEAMS = [
+  { id: '1', name: 'Neon Vipers', founded: 'Jan 2023', region: 'North America', rank: 'DIAMOND IV', status: 'VERIFIED' },
+  { id: '2', name: 'Cyber Sentinels', founded: 'Nov 2022', region: 'Europe West', rank: 'GRANDMASTER', status: 'VERIFIED' },
+  { id: '3', name: 'Redux Phoenix', founded: 'Mar 2024', region: 'Asia Pacific', rank: 'PLATINUM II', status: 'PENDING' },
+  { id: '4', name: 'Zero Gravity', founded: 'Dec 2022', region: 'South America', rank: 'UNRANKED', status: 'SUSPENDED' },
+];
+
+const ITEMS_PER_PAGE = 2; // Slice threshold setup to trigger pagination elements
+
 const Users = () => {
   const [activeTab, setActiveTab] = useState("players");
+
+  // Filter and Pagination Tracking hooks
+  const [playerSearch, setPlayerSearch] = useState("");
+  const [playerRank, setPlayerRank] = useState("all");
+  const [playerPage, setPlayerPage] = useState(1);
+
+  const [teamSearch, setTeamSearch] = useState("");
+  const [teamPage, setTeamPage] = useState(1);
 
   // Modal Orchestration State Hooks
   const [modalType, setModalType] = useState<ModalType>(null);
@@ -43,6 +71,29 @@ const Users = () => {
     setSelectedItemContext(context);
     setModalType(type);
   };
+
+  // --- Players Filtering & Pagination Engine ---
+  const filteredPlayers = INITIAL_PLAYERS.filter((player) => {
+    const matchesSearch = player.name.toLowerCase().includes(playerSearch.toLowerCase()) || 
+                          player.team.toLowerCase().includes(playerSearch.toLowerCase());
+    const matchesRank = playerRank === "all" || player.rank.toLowerCase() === playerRank.toLowerCase();
+    return matchesSearch && matchesRank;
+  });
+
+  const totalPlayerPages = Math.ceil(filteredPlayers.length / ITEMS_PER_PAGE) || 1;
+  const playerStartIdx = filteredPlayers.length > 0 ? (playerPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const playerEndIdx = Math.min(playerPage * ITEMS_PER_PAGE, filteredPlayers.length);
+  const visiblePlayers = filteredPlayers.slice((playerPage - 1) * ITEMS_PER_PAGE, playerPage * ITEMS_PER_PAGE);
+
+  // --- Teams Filtering & Pagination Engine ---
+  const filteredTeams = INITIAL_TEAMS.filter((team) => 
+    team.name.toLowerCase().includes(teamSearch.toLowerCase()) || team.region.toLowerCase().includes(teamSearch.toLowerCase())
+  );
+
+  const totalTeamPages = Math.ceil(filteredTeams.length / ITEMS_PER_PAGE) || 1;
+  const teamStartIdx = filteredTeams.length > 0 ? (teamPage - 1) * ITEMS_PER_PAGE + 1 : 0;
+  const teamEndIdx = Math.min(teamPage * ITEMS_PER_PAGE, filteredTeams.length);
+  const visibleTeams = filteredTeams.slice((teamPage - 1) * ITEMS_PER_PAGE, teamPage * ITEMS_PER_PAGE);
 
   return (
     <div className="p-4 md:p-8 space-y-6 bg-[#07090d] text-[#94a3b8] min-h-screen font-sans antialiased max-w-[1600px] mx-auto">
@@ -56,7 +107,6 @@ const Users = () => {
         onConfirm={(data) => console.log("Database updated callback stream hook:", data)}
       />
 
-
       {/* --- TOP PROFILE HEADER --- */}
       <header className="flex justify-between items-center w-full">
         <div>
@@ -64,19 +114,6 @@ const Users = () => {
           <p className="text-xs text-slate-500 mt-1">
             Manage players, teams, and administrators across the platform's tournaments and leagues.
           </p>
-        </div>
-        
-        {/* Profile Info matching Screenshot 2026-06-01 at 4.12.15 pm.png */}
-        <div className="flex items-center space-x-3">
-          <div className="hidden sm:flex flex-col text-right">
-            <span className="text-xs font-bold text-white">Admin Profile</span>
-            <span className="text-[10px] text-slate-500 font-medium">System Master</span>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#4ade80] to-cyan-400 p-px">
-            <div className="w-full h-full bg-[#07090d] rounded-xl flex items-center justify-center text-xs font-black text-white">
-              AD
-            </div>
-          </div>
         </div>
       </header>
 
@@ -91,7 +128,7 @@ const Users = () => {
           </TabsList>
         </div>
 
-       
+        {/* --- PLAYERS MANAGEMENT TAB PANEL --- */}
         <TabsContent value="players" className="space-y-6 outline-none focus:outline-none">
           <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-2xl p-5 flex flex-col space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -109,9 +146,14 @@ const Users = () => {
             <div className="flex gap-3 bg-[#07090d]/60 p-2 rounded-xl border border-[#1e293b]/20">
               <div className="relative flex-1">
                 <Search className="w-3.5 h-3.5 text-slate-600 absolute left-3 top-1/2 -translate-y-1/2" />
-                <Input placeholder="Search players..." className="w-full bg-[#0c1017] border border-[#1e293b]/40 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-300 placeholder-slate-600 focus-visible:ring-0 focus-visible:border-[#4ade80]/40 h-8" />
+                <Input 
+                  value={playerSearch}
+                  onChange={(e) => { setPlayerSearch(e.target.value); setPlayerPage(1); }}
+                  placeholder="Search players..." 
+                  className="w-full bg-[#0c1017] border border-[#1e293b]/40 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-300 placeholder-slate-600 focus-visible:ring-0 focus-visible:border-[#4ade80]/40 h-8" 
+                />
               </div>
-              <Select>
+              <Select value={playerRank} onValueChange={(val) => { setPlayerRank(val); setPlayerPage(1); }}>
                 <SelectTrigger className="bg-[#0c1017] border border-[#1e293b]/40 rounded-lg px-3 py-1.5 text-xs text-slate-300 font-bold w-full sm:w-[180px] h-8">
                   <SelectValue placeholder="Filter by rank" />
                 </SelectTrigger>
@@ -138,67 +180,98 @@ const Users = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody className="divide-y divide-[#1e293b]/10 font-medium">
-                  {[
-                    { id: '1', name: 'Player1', team: 'Team Alpha', rank: 'Diamond', wins: 150, losses: 120, status: 'Active' },
-                    { id: '2', name: 'ShadowHunter', team: 'Viper Esports', rank: 'Grandmaster', wins: 210, losses: 45, status: 'Active' },
-                    { id: '3', name: 'GlitchOps', team: 'Neon Legion', rank: 'Platinum', wins: 98, losses: 82, status: 'Offline' },
-                  ].map((player) => (
-                    <TableRow key={player.id} className="border-b-0 hover:bg-[#141b26]/30 transition-colors group">
-                      <TableCell className="py-4 pl-2 font-medium">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-7 h-7 bg-slate-800 rounded-lg border border-[#1e293b]/30 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-400">👤</div>
-                          <span className="text-white font-bold tracking-wide">{player.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-4 text-slate-400 font-semibold">{player.team}</TableCell>
-                      <TableCell className="py-4">
-                        <Badge className={`px-2 py-0.5 text-[9px] font-black tracking-wide rounded border bg-transparent pointer-events-none ${
-                          player.rank === 'Grandmaster' ? 'text-purple-400 border-purple-500/20 bg-purple-500/5' :
-                          player.rank === 'Diamond' ? 'text-cyan-400 border-cyan-500/20 bg-cyan-500/5' :
-                          'text-teal-400 border-teal-500/20 bg-teal-500/5'
-                        }`}>
-                          {player.rank}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-4 font-bold font-mono text-[11px]">
-                        <span className="text-[#00FFC6]">{player.wins} W</span>
-                        <span className="text-slate-600 mx-1.5">/</span>
-                        <span className="text-rose-400">{player.losses} L</span>
-                      </TableCell>
-                      <TableCell className="py-4">
-                        <span className={`inline-flex items-center space-x-1.5 px-2 py-0.5 text-[9px] font-bold rounded-full ${
-                          player.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'
-                        }`}>
-                          <span className={`w-1 h-1 rounded-full ${player.status === 'Active' ? 'bg-[#00FFC6]' : 'bg-slate-500'}`} />
-                          <span>{player.status}</span>
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-4 text-right pr-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 text-slate-600 hover:text-white hover:bg-transparent">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-[#0f141c] border border-[#1e293b]/80 text-slate-300">
-                            <DropdownMenuItem onClick={() => triggerModal("edit-player", player)} className="focus:bg-[#1e293b] focus:text-white cursor-pointer"><Edit className="w-4 h-4 mr-2" /> Edit</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => triggerModal("delete", player)} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+                  {visiblePlayers.length > 0 ? (
+                    visiblePlayers.map((player) => (
+                      <TableRow key={player.id} className="border-b-0 hover:bg-[#141b26]/30 transition-colors group">
+                        <TableCell className="py-4 pl-2 font-medium">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-7 h-7 bg-slate-800 rounded-lg border border-[#1e293b]/30 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-400">👤</div>
+                            <span className="text-white font-bold tracking-wide">{player.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-4 text-slate-400 font-semibold">{player.team}</TableCell>
+                        <TableCell className="py-4">
+                          <Badge className={`px-2 py-0.5 text-[9px] font-black tracking-wide rounded border bg-transparent pointer-events-none ${
+                            player.rank === 'Grandmaster' ? 'text-purple-400 border-purple-500/20 bg-purple-500/5' :
+                            player.rank === 'Diamond' ? 'text-cyan-400 border-cyan-500/20 bg-cyan-500/5' :
+                            'text-teal-400 border-teal-500/20 bg-teal-500/5'
+                          }`}>
+                            {player.rank}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-4 font-bold font-mono text-[11px]">
+                          <span className="text-[#00FFC6]">{player.wins} W</span>
+                          <span className="text-slate-600 mx-1.5">/</span>
+                          <span className="text-rose-400">{player.losses} L</span>
+                        </TableCell>
+                        <TableCell className="py-4">
+                          <span className={`inline-flex items-center space-x-1.5 px-2 py-0.5 text-[9px] font-bold rounded-full ${
+                            player.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                          }`}>
+                            <span className={`w-1 h-1 rounded-full ${player.status === 'Active' ? 'bg-[#00FFC6]' : 'bg-slate-500'}`} />
+                            <span>{player.status}</span>
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-4 text-right pr-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0 text-slate-600 hover:text-white hover:bg-transparent">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-[#0f141c] border border-[#1e293b]/80 text-slate-300">
+                              <DropdownMenuItem onClick={() => triggerModal("edit-player", player)} className="focus:bg-[#1e293b] focus:text-white cursor-pointer"><Edit className="w-4 h-4 mr-2" /> Edit</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => triggerModal("delete", player)} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-8 text-center text-slate-500">No matching players discovered.</TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </div>
 
-            {/* Custom Pagination Footer Structure */}
-            <div className="flex justify-between items-center pt-3 border-t border-[#1e293b]/20 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              <span>Showing 1-10 of 2,450 players</span>
-              <div className="flex items-center space-x-1">
-                <Button size="icon" className="w-7 h-7 bg-[#07090d] border border-[#1e293b]/40 rounded-md hover:text-white hover:bg-[#0f141c] transition-colors"><ChevronLeft className="w-3.5 h-3.5" /></Button>
-                <Button size="icon" className="w-7 h-7 bg-[#07090d] border border-[#1e293b]/40 rounded-md text-white hover:text-[#4ade80] hover:bg-[#0f141c] transition-colors"><ChevronRight className="w-3.5 h-3.5" /></Button>
-              </div>
+            {/* --- SHADCN INTEGRATED PLAYERS FOOTER PAGINATION --- */}
+            <div className="flex flex-col sm:flex-row justify-between items-center pt-3 border-t border-[#1e293b]/20 text-[10px] font-bold uppercase tracking-wider text-slate-500 gap-4">
+              <span>Showing {playerStartIdx}-{playerEndIdx} of {filteredPlayers.length} players</span>
+              
+              <Pagination className="mx-0 w-auto">
+                <PaginationContent className="gap-1">
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); if (playerPage > 1) setPlayerPage(playerPage - 1); }}
+                      className={playerPage === 1 ? "opacity-40 pointer-events-none" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                  
+                  {Array.from({ length: totalPlayerPages }, (_, i) => i + 1).map((p) => (
+                    <PaginationItem key={p}>
+                      <PaginationLink 
+                        href="#" 
+                        isActive={p === playerPage} 
+                        onClick={(e) => { e.preventDefault(); setPlayerPage(p); }}
+                        className={`w-7 h-7 rounded text-[11px] font-mono ${p === playerPage ? "bg-[#00FFC6] text-[#07090d] font-black" : "bg-[#07090d] text-slate-400 border border-[#1e293b]/40 hover:text-white"}`}
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); if (playerPage < totalPlayerPages) setPlayerPage(playerPage + 1); }}
+                      className={playerPage === totalPlayerPages ? "opacity-40 pointer-events-none" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           </div>
 
@@ -228,7 +301,7 @@ const Users = () => {
           </section>
         </TabsContent>
 
-     
+        {/* --- TEAMS PANEL TAB INTERFACE --- */}
         <TabsContent value="teams" className="space-y-4 outline-none focus:outline-none">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
@@ -238,7 +311,12 @@ const Users = () => {
             <div className="flex items-center space-x-2 w-full md:w-auto">
               <div className="relative flex-1 md:w-64">
                 <Search className="w-3.5 h-3.5 text-slate-600 absolute left-3 top-1/2 -translate-y-1/2" />
-                <Input placeholder="Search team names..." className="w-full bg-[#0f141c] border border-[#1e293b]/40 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-300 placeholder-slate-600 h-9 focus-visible:ring-0" />
+                <Input 
+                  value={teamSearch}
+                  onChange={(e) => { setTeamSearch(e.target.value); setTeamPage(1); }}
+                  placeholder="Search team names..." 
+                  className="w-full bg-[#0f141c] border border-[#1e293b]/40 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-300 placeholder-slate-600 h-9 focus-visible:ring-0" 
+                />
               </div>
               <Button variant="outline" className="flex items-center space-x-1.5 px-4 h-9 bg-[#1e293b]/60 border border-[#1e293b] rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-[#1e293b]">
                 <Filter className="w-3.5 h-3.5" />
@@ -266,7 +344,7 @@ const Users = () => {
           </section>
 
           {/* Main Table Grid Card */}
-          <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-4 overflow-x-auto">
+          <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-4 flex flex-col space-y-4 overflow-x-auto">
             <Table className="w-full text-left text-xs border-collapse min-w-[650px]">
               <TableHeader>
                 <TableRow className="border-b border-[#1e293b]/30 hover:bg-transparent">
@@ -278,69 +356,95 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-[#1e293b]/10 font-medium">
-                {[
-                  { id: '1', name: 'Neon Vipers', founded: 'Jan 2023', region: 'North America', rank: 'DIAMOND IV', status: 'VERIFIED' },
-                  { id: '2', name: 'Cyber Sentinels', founded: 'Nov 2022', region: 'Europe West', rank: 'GRANDMASTER', status: 'VERIFIED' },
-                  { id: '3', name: 'Redux Phoenix', founded: 'Mar 2024', region: 'Asia Pacific', rank: 'PLATINUM II', status: 'PENDING' },
-                  { id: '4', name: 'Zero Gravity', founded: 'Dec 2022', region: 'South America', rank: 'UNRANKED', status: 'SUSPENDED' },
-                ].map((team) => (
-                  <TableRow key={team.id} className="border-b-0 hover:bg-[#141b26]/20 transition-colors group">
-                    <td className="py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-7 h-7 rounded bg-slate-950 flex items-center justify-center text-xs border border-[#1e293b]/40">🛡️</div>
-                        <div>
-                          <div className="text-white font-bold group-hover:text-[#4ade80] transition-colors">{team.name}</div>
-                          <div className="text-[9px] text-slate-600 mt-0.5">Founded: {team.founded}</div>
+                {visibleTeams.length > 0 ? (
+                  visibleTeams.map((team) => (
+                    <TableRow key={team.id} className="border-b-0 hover:bg-[#141b26]/20 transition-colors group">
+                      <td className="py-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-7 h-7 rounded bg-slate-950 flex items-center justify-center text-xs border border-[#1e293b]/40">🛡️</div>
+                          <div>
+                            <div className="text-white font-bold group-hover:text-[#4ade80] transition-colors">{team.name}</div>
+                            <div className="text-[9px] text-slate-600 mt-0.5">Founded: {team.founded}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-4 text-slate-400 font-semibold">{team.region}</td>
-                    <td className="py-4">
-                      <span className="text-[10px] font-black font-mono tracking-tight text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/20">
-                        {team.rank}
-                      </span>
-                    </td>
-                    <td className="py-4">
-                      <span className={`inline-flex items-center space-x-1 text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full ${
-                        team.status === 'VERIFIED' ? 'bg-emerald-500/10 text-[#00FFC6]' :
-                        team.status === 'PENDING' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-rose-500/10 text-rose-400'
-                      }`}>
-                        <span>●</span> <span>{team.status}</span>
-                      </span>
-                    </td>
-                    <td className="py-4 text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 text-slate-600 hover:text-white hover:bg-transparent">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-[#0f141c] border border-[#1e293b]/80 text-slate-300">
-                          <DropdownMenuItem onClick={() => triggerModal("edit-team", team)} className="focus:bg-[#1e293b] focus:text-white cursor-pointer"><Edit className="w-4 h-4 mr-2" /> Edit Records</DropdownMenuItem>
+                      </td>
+                      <td className="py-4 text-slate-400 font-semibold">{team.region}</td>
+                      <td className="py-4">
+                        <span className="text-[10px] font-black font-mono tracking-tight text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/20">
+                          {team.rank}
+                        </span>
+                      </td>
+                      <td className="py-4">
+                        <span className={`inline-flex items-center space-x-1 text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full ${
+                          team.status === 'VERIFIED' ? 'bg-emerald-500/10 text-[#00FFC6]' :
+                          team.status === 'PENDING' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-rose-500/10 text-rose-400'
+                        }`}>
+                          <span>●</span> <span>{team.status}</span>
+                        </span>
+                      </td>
+                      <td className="py-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0 text-slate-600 hover:text-white hover:bg-transparent">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-[#0f141c] border border-[#1e293b]/80 text-slate-300">
+                            <DropdownMenuItem onClick={() => triggerModal("edit-team", team)} className="focus:bg-[#1e293b] focus:text-white cursor-pointer"><Edit className="w-4 h-4 mr-2" /> Edit Records</DropdownMenuItem>
                           </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+                        </DropdownMenu>
+                      </td>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <td colSpan={5} className="py-8 text-center text-slate-500">No organizational matrix listings matching this criteria.</td>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
 
-            {/* Directory Pagination Layout Component */}
-            <div className="flex justify-between items-center pt-4 border-t border-[#1e293b]/20 text-[10px] font-bold text-slate-500 mt-2">
-              <span>Showing 5 of 1,248 teams</span>
-              <div className="flex items-center space-x-1">
-                <Button size="icon" className="w-6 h-6 p-0 bg-[#07090d] border border-[#1e293b]/40 rounded text-slate-400 hover:text-white hover:bg-transparent"><ChevronLeft className="w-3.5 h-3.5" /></Button>
-                <span className="px-2 py-0.5 bg-[#00FFC6] text-[#07090d] rounded font-black cursor-default text-[11px]">1</span>
-                <span className="px-2 py-0.5 bg-[#07090d] border border-[#1e293b]/40 rounded hover:text-white cursor-pointer text-[11px]">2</span>
-                <Button size="icon" className="w-6 h-6 p-0 bg-[#07090d] border border-[#1e293b]/40 rounded text-slate-400 hover:text-white hover:bg-transparent"><ChevronRight className="w-3.5 h-3.5" /></Button>
-              </div>
+            {/* --- SHADCN INTEGRATED TEAMS FOOTER PAGINATION --- */}
+            <div className="flex flex-col sm:flex-row justify-between items-center pt-4 border-t border-[#1e293b]/20 text-[10px] font-bold text-slate-500 gap-4">
+              <span>Showing {teamStartIdx}-{teamEndIdx} of {filteredTeams.length} teams</span>
+              
+              <Pagination className="mx-0 w-auto">
+                <PaginationContent className="gap-1">
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); if (teamPage > 1) setTeamPage(teamPage - 1); }}
+                      className={teamPage === 1 ? "opacity-40 pointer-events-none" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+
+                  {Array.from({ length: totalTeamPages }, (_, i) => i + 1).map((p) => (
+                    <PaginationItem key={p}>
+                      <PaginationLink 
+                        href="#" 
+                        isActive={p === teamPage} 
+                        onClick={(e) => { e.preventDefault(); setTeamPage(p); }}
+                        className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold ${p === teamPage ? "bg-[#00FFC6] text-[#07090d]" : "bg-[#07090d] border border-[#1e293b]/40 text-slate-400 hover:text-white"}`}
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+
+                  <PaginationItem>
+                    <PaginationNext 
+                      href="#" 
+                      onClick={(e) => { e.preventDefault(); if (teamPage < totalTeamPages) setTeamPage(teamPage + 1); }}
+                      className={teamPage === totalTeamPages ? "opacity-40 pointer-events-none" : "cursor-pointer"}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
             </div>
           </div>
         </TabsContent>
 
-     {/* ========================================================
-            ADMINS PANEL 
-            ======================================================== */}
+        {/* --- ADMINS PANEL TAB PANEL --- */}
         <TabsContent value="admins" className="space-y-6 outline-none focus:outline-none">
           <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-2xl p-5 flex flex-col space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -348,13 +452,11 @@ const Users = () => {
                 <h3 className="text-base font-bold text-white tracking-wide">Admins / Moderators</h3>
                 <p className="text-xs text-slate-500 mt-0.5">Assign internal platform roles and system security clearances.</p>
               </div>
-              {/* Trigger Add Admin Modal */}
               <Button onClick={() => triggerModal("add-admin")} className="bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] rounded-xl text-xs font-black uppercase tracking-wider gap-2 w-full sm:w-auto h-auto px-4 py-2 shadow-lg shadow-emerald-500/10">
                 <Plus className="w-4 h-4 stroke-[3]" /> Add Admin
               </Button>
             </div>
 
-            {/* Admin Directory Table Grid */}
             <div className="overflow-x-auto w-full">
               <Table className="w-full text-left text-xs min-w-[650px] border-collapse">
                 <TableHeader>
@@ -398,7 +500,6 @@ const Users = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-[#0f141c] border border-[#1e293b]/80 text-slate-300">
-                            {/* Re-using edit-player context structure or handling dynamically */}
                             <DropdownMenuItem onClick={() => triggerModal("edit-player", admin)} className="focus:bg-[#1e293b] cursor-pointer">
                               <Edit className="w-4 h-4 mr-2" /> Modify Clearance
                             </DropdownMenuItem>
@@ -416,9 +517,7 @@ const Users = () => {
           </div>
         </TabsContent>
 
-        {/* ========================================================
-            REPORTS PANEL
-            ======================================================== */}
+        {/* --- REPORTS PANEL TAB PANEL --- */}
         <TabsContent value="reports" className="space-y-6 outline-none focus:outline-none">
           <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-2xl p-5 flex flex-col space-y-4">
             <div>

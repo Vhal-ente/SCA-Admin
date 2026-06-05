@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Calendar, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { PostModal, Post } from "@/components/PostModal";
+import { PostModal, Post } from "@/components/modals/PostModal";
 import {
   AlertDialog,
   AlertDialogAction,
