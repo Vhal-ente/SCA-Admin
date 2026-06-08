@@ -24,7 +24,7 @@ const Schedule = () => {
         </div>
         <Button 
           onClick={() => setIsPostOpen(true)}
-          className="bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] font-bold gap-2"
+          className="bg-[#00d9b8] hover:bg-[#3ec973] text-[#07090d] font-bold gap-2"
         >
           <Plus className="w-4 h-4" />
           Add Event
@@ -41,7 +41,7 @@ const Schedule = () => {
               onClick={() => setActiveTab(tab)}
               className={`h-9 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
                 activeTab === tab
-                  ? "bg-[#4ade80] text-[#07090d] shadow-sm"
+                  ? "bg-[#00d9b8] text-[#07090d] shadow-sm"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/30"
               }`}
             >
@@ -78,7 +78,7 @@ const Schedule = () => {
                 <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wide leading-none">
                   Regional Semi-Finals
                 </h2>
-                <p className="text-[11px] font-bold text-[#4ade80] tracking-wide">
+                <p className="text-[11px] font-bold text-[#00d9b8] tracking-wide">
                   Cloud9 vs. Team Liquid <span className="text-slate-500 px-1">•</span> MAP 3
                 </p>
               </div>
