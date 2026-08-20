@@ -1,103 +1,39 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, Copy, Activity, Terminal, ArrowUpRight } from 'lucide-react';
+import { useState } from "react";
+import { Activity, ArrowUpRight, Building2, Copy, Eye, EyeOff, LockKeyhole, Save, Terminal } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+
+const inputClass = "h-12 w-full border border-border bg-background px-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary";
 
 export default function PaymentsTab() {
   const [showSecret, setShowSecret] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(true);
+  const [enabled, setEnabled] = useState(true);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start w-full">
-      {/* Form Settings Configuration Column */}
-      <div className="lg:col-span-2 bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-6 flex flex-col space-y-6">
-        <div className="flex justify-between items-center pb-4 border-b border-[#1e293b]/20">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-950/40 border border-teal-500/20 flex items-center justify-center text-teal-400">🏦</div>
-            <div>
-              <h3 className="text-sm font-bold text-white tracking-wide">Paystack Integration</h3>
-              <p className="text-[11px] text-slate-500">GLOBAL PAYOUTS & COLLECTIONS</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2.5">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Enable Paystack</span>
-            <button 
-              onClick={() => setIsEnabled(!isEnabled)}
-              className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${isEnabled ? 'bg-[#4ade80]' : 'bg-slate-800'}`}
-            >
-              <span className={`w-3.5 h-3.5 rounded-full bg-[#07090d] absolute transition-all ${isEnabled ? 'right-1' : 'left-1'}`} />
-            </button>
-          </div>
+    <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+      <section className="border border-border bg-card">
+        <div className="flex flex-col gap-5 border-b border-border p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4"><div className="flex h-12 w-12 items-center justify-center bg-primary/10 text-primary"><Building2 className="h-6 w-6" /></div><div><p className="text-xs font-bold uppercase tracking-[0.25em] text-primary">Payment gateway</p><h2 className="mt-1 text-2xl font-semibold text-foreground">Paystack integration</h2><p className="text-sm text-muted-foreground">Collections, entry fees, and payouts.</p></div></div>
+          <label className="flex items-center gap-3 text-xs font-bold uppercase tracking-wider text-muted-foreground"><span>{enabled ? "Enabled" : "Disabled"}</span><Switch checked={enabled} onCheckedChange={setEnabled} /></label>
         </div>
 
-        <form onSubmit={(e) => e.preventDefault()} className="flex flex-col space-y-4 text-xs font-bold">
-          <div className="flex flex-col space-y-1.5">
-            <label className="text-slate-400 uppercase tracking-wider text-[10px]">Public Key</label>
-            <input type="text" placeholder="pk_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" className="w-full bg-[#07090d] border border-[#1e293b]/40 rounded-lg px-3 py-2 text-slate-400 font-mono focus:outline-none" />
+        <form onSubmit={(event) => event.preventDefault()} className="space-y-6 p-6">
+          <div className="grid gap-5 md:grid-cols-2">
+            <label className="space-y-2"><span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Public key</span><input className={inputClass} placeholder="pk_live_xxxxxxxxxxxxxxxxx" /></label>
+            <label className="space-y-2"><span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Secret key</span><div className="relative"><input type={showSecret ? "text" : "password"} className={`${inputClass} pr-12`} placeholder="sk_live_xxxxxxxxxxxxxxxxx" /><button type="button" onClick={() => setShowSecret(!showSecret)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">{showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button></div></label>
           </div>
-
-          <div className="flex flex-col space-y-1.5 relative">
-            <label className="text-slate-400 uppercase tracking-wider text-[10px]">Secret Key</label>
-            <div className="relative">
-              <input type={showSecret ? "text" : "password"} placeholder="sk_live_thisisafakesecretkeyforviewportrepresentationonly" className="w-full bg-[#07090d] border border-[#1e293b]/40 rounded-lg pl-3 pr-10 py-2 text-slate-400 font-mono focus:outline-none" />
-              <button type="button" onClick={() => setShowSecret(!showSecret)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
-                {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+          <label className="block space-y-2"><span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Webhook URL</span><div className="relative"><input className={`${inputClass} pr-12 font-mono`} placeholder="https://api.sca.gg/webhooks/paystack" /><Copy className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /></div></label>
+          <div className="grid gap-5 md:grid-cols-3">
+            <label className="space-y-2"><span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Default currency</span><select className={`theme-native-select ${inputClass}`}><option>NGN — Nigerian Naira</option><option>USD — US Dollar</option></select></label>
+            <label className="space-y-2"><span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Payout schedule</span><select className={`theme-native-select ${inputClass}`}><option>Manual approval</option><option>Weekly</option><option>Monthly</option></select></label>
+            <label className="space-y-2"><span className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Minimum payout</span><input className={inputClass} placeholder="₦10,000" /></label>
           </div>
-
-          <div className="flex flex-col space-y-1.5">
-            <label className="text-slate-400 uppercase tracking-wider text-[10px]">Webhook URL</label>
-            <div className="relative">
-              <input type="text" placeholder="https://api.kineticvoid.gg/webhooks/paystack" className="w-full bg-[#07090d] border border-[#1e293b]/40 rounded-lg pl-3 pr-10 py-2 text-slate-400 font-mono focus:outline-none" />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"><Copy className="w-3.5 h-3.5" /></button>
-            </div>
-          </div>
-
-          <div className="flex flex-col space-y-1.5">
-            <label className="text-slate-400 uppercase tracking-wider text-[10px]">Default Currency</label>
-            <select className="w-full bg-[#07090d] border border-[#1e293b]/40 rounded-lg px-3 py-2 text-slate-300 focus:outline-none">
-              <option value="NGN">NGN - Nigerian Naira</option>
-              <option value="USD">USD - United States Dollar</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col sm:flex-row justify-between items-center pt-4 gap-3 border-t border-[#1e293b]/10 text-[10px]">
-            <p className="text-slate-600 font-semibold">🔒 Your credentials are encrypted using AES-256 GCM.</p>
-            <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
-              <button className="px-4 py-2 bg-transparent hover:bg-slate-800/40 text-slate-300 font-black border border-[#1e293b]/60 rounded-lg transition-colors uppercase tracking-wider">Test Connection</button>
-              <button className="px-4 py-2 bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] font-black rounded-lg transition-colors uppercase tracking-wider">Save Settings</button>
-            </div>
-          </div>
+          <div className="flex flex-col gap-4 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between"><p className="flex items-center gap-2 text-xs text-muted-foreground"><LockKeyhole className="h-4 w-4 text-primary" /> Credentials are encrypted at rest.</p><div className="flex gap-3"><button className="h-11 border border-border px-5 text-sm font-bold uppercase tracking-wide text-foreground">Test connection</button><button className="flex h-11 items-center gap-2 bg-primary px-5 text-sm font-bold uppercase tracking-wide text-primary-foreground"><Save className="h-4 w-4" /> Save settings</button></div></div>
         </form>
-      </div>
+      </section>
 
-      {/* Sidebar Health Widgets Panel */}
-      <div className="flex flex-col space-y-4 w-full">
-        <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-4 flex flex-col space-y-3">
-          <h4 className="text-xs font-bold text-white tracking-wide">Integration Health</h4>
-          <div className="divide-y divide-[#1e293b]/20 text-[11px] font-bold">
-            <div className="flex justify-between py-2 items-center">
-              <span className="text-slate-500">API Status</span>
-              <span className="text-emerald-400 font-black flex items-center space-x-1 uppercase">
-                <Activity className="w-3 h-3" /> <span>● Operational</span>
-              </span>
-            </div>
-            <div className="flex justify-between py-2 items-center">
-              <span className="text-slate-500">Last Payout</span>
-              <span className="text-slate-300">2h ago</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-xl p-4 flex flex-col space-y-3">
-          <div className="w-full h-20 bg-slate-950/60 rounded-lg border border-[#1e293b]/20 flex items-center justify-center p-3 text-slate-500 font-mono text-[9px] text-center select-none relative">
-            <Terminal className="w-10 h-10 text-slate-900/30 absolute" />
-            <span className="relative">WEBHOOK_RECEIVED (200 OK)<br />event: charge.success</span>
-          </div>
-          <h4 className="text-xs font-bold text-white tracking-wide">Developer Logs</h4>
-          <button className="w-full py-1.5 bg-[#1e293b]/40 hover:bg-[#1e293b]/80 text-xs text-slate-300 font-bold uppercase tracking-wider border border-[#1e293b]/60 rounded-lg transition-colors flex items-center justify-center space-x-1">
-            <span>View Logs</span> <ArrowUpRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+      <div className="space-y-6">
+        <section className="border border-border bg-card p-6"><p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Integration health</p><div className="mt-5 divide-y divide-border"><div className="flex items-center justify-between py-4"><span className="text-sm text-muted-foreground">API status</span><span className="flex items-center gap-2 text-xs font-bold uppercase text-emerald-400"><Activity className="h-4 w-4" /> Operational</span></div><div className="flex justify-between py-4 text-sm"><span className="text-muted-foreground">Last payout</span><span className="font-semibold text-foreground">2 hours ago</span></div><div className="flex justify-between py-4 text-sm"><span className="text-muted-foreground">Settlement account</span><span className="font-semibold text-foreground">•••• 8821</span></div></div></section>
+        <section className="border border-border bg-card p-6"><div className="flex h-28 items-center justify-center border border-dashed border-border bg-background/40 text-center font-mono text-xs text-muted-foreground"><Terminal className="mr-3 h-6 w-6 text-primary" /> WEBHOOK_RECEIVED<br />charge.success · 200 OK</div><h3 className="mt-5 text-lg font-semibold text-foreground">Developer logs</h3><p className="mt-1 text-sm text-muted-foreground">Inspect gateway callbacks and failed events.</p><button className="mt-5 flex h-11 w-full items-center justify-center gap-2 border border-border text-sm font-bold uppercase tracking-wide text-foreground">View logs <ArrowUpRight className="h-4 w-4" /></button></section>
       </div>
     </div>
   );

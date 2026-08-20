@@ -151,10 +151,13 @@ const Games = () => {
   const gameNames = games.map((g) => g.name);
 
   return (
-    <div className="p-4 md:p-8 space-y-6 md:space-y-8">
+    <div className="min-h-screen bg-background p-4 md:p-8 xl:p-10">
+      <div className="mx-auto max-w-[1500px] space-y-7">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-4xl font-bold text-primary mb-2">GAMES AND PLAYERS MANAGEMENT</h1>
+          <p className="mb-3 text-xs font-bold uppercase tracking-[.28em] text-primary">Platform catalogue</p>
+          <h1 className="text-3xl md:text-5xl font-semibold tracking-tight text-foreground">Games & Players</h1>
+          <p className="mt-3 text-muted-foreground">Maintain supported titles and the competitive player directory.</p>
         </div>
         <Button 
           onClick={activeTab === "games" ? handleAddGame : handleAddPlayer}
@@ -351,6 +354,7 @@ const Games = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 };

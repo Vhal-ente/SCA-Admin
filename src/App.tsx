@@ -15,17 +15,24 @@ import LoginPage from "./pages/Login";
 import SignupPage from "./pages/Signup";
 import Games from "./pages/Games";
 import Schedule from "./pages/Schedule";
+import Shogun from "./pages/Shogun";
+import Content from "./pages/Content";
 import NotFound from "./pages/NotFound";
+import { ThemeProvider } from "next-themes";
+import { applyBrandColor, getSavedBrandColor } from "./lib/brand-theme";
 
 const queryClient = new QueryClient();
 
+applyBrandColor(getSavedBrandColor());
+
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
           <Route path="/tournaments" element={<Layout><Tournaments /></Layout>} />
           <Route path="/league" element={<Layout><League /></Layout>} />
@@ -33,16 +40,19 @@ const App = () => (
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
           <Route path="/finance" element={<Layout><Finance /></Layout>} />
           <Route path="/news" element={<Layout><News /></Layout>} />
-          {/* <Route path="/shogun" element={<Layout><Shogun /></Layout>} /> */}
+          <Route path="/admin/content/*" element={<Layout><Content /></Layout>} />
+          <Route path="/shogun" element={<Layout><Shogun /></Layout>} />
+          <Route path="/admin/shogun/*" element={<Layout><Shogun /></Layout>} />
           <Route path="/games" element={<Layout><Games /></Layout>} />
           <Route path="/schedule" element={<Layout><Schedule /></Layout>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

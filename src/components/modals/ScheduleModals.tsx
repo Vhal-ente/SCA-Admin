@@ -30,7 +30,7 @@ export function PostEventModal({ isOpen, onClose, onConfirm }: StandardEventModa
       <div className="bg-[#0b0f19] border border-[#1e293b] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-800 p-4 bg-[#07090d]">
           <h2 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#4ade80]" /> Post New Event
+            <Calendar className="w-4 h-4 text-[#00FFC6]" /> Post New Event
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
             <X className="w-4 h-4" />
@@ -44,14 +44,14 @@ export function PostEventModal({ isOpen, onClose, onConfirm }: StandardEventModa
             <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Game Card Banner Image</label>
             <div 
               onClick={() => fileInputRef.current?.click()}
-              className="group relative h-28 w-full rounded-xl bg-[#07090d] border border-dashed border-slate-800 hover:border-[#4ade80]/40 flex flex-col items-center justify-center gap-1 cursor-pointer overflow-hidden transition-all duration-200"
+              className="group relative h-28 w-full rounded-xl bg-[#07090d] border border-dashed border-slate-800 hover:border-[#00FFC6]/40 flex flex-col items-center justify-center gap-1 cursor-pointer overflow-hidden transition-all duration-200"
             >
               {imagePreview ? (
                 <>
                   <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-luminosity group-hover:opacity-50 transition-opacity" />
                   <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors" />
                   <div className="relative z-10 flex flex-col items-center text-white bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800/80 text-[10px] font-black tracking-widest uppercase gap-1">
-                    <UploadCloud className="w-3.5 h-3.5 text-[#4ade80]" />
+                    <UploadCloud className="w-3.5 h-3.5 text-[#00FFC6]" />
                     Replace Selected Asset
                   </div>
                 </>
@@ -71,43 +71,43 @@ export function PostEventModal({ isOpen, onClose, onConfirm }: StandardEventModa
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Game / Category</label>
-              <input type="text" placeholder="e.g. VALORANT" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" required />
+              <input type="text" placeholder="e.g. VALORANT" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50" required />
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Tournament Tier</label>
-              <input type="text" placeholder="e.g. TIER 1 MAJOR" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" />
+              <input type="text" placeholder="e.g. TIER 1 MAJOR" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50" />
             </div>
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Event Title</label>
-            <input type="text" placeholder="e.g. Regional Grand Finals" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" required />
+            <input type="text" placeholder="e.g. Regional Grand Finals" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50" required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Date</label>
-              <input type="text" placeholder="OCT 24" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" required />
+              <input type="text" placeholder="OCT 24" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50" required />
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Time Reference</label>
-              <input type="text" placeholder="18:00 UTC" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" required />
+              <input type="text" placeholder="18:00 UTC" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50" required />
             </div>
           </div>
 
           <div className="space-y-1.5 border-t border-slate-900 pt-3">
-            <label className="text-[10px] font-black uppercase tracking-wider text-[#4ade80] flex items-center gap-1">
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#00FFC6] flex items-center gap-1">
               <Video className="w-3.5 h-3.5" /> Live Stream Broadcast Link
             </label>
             <div className="relative">
-              <input type="url" placeholder="https://youtube.com/live/... or Twitch URL" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 pl-9 pr-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" />
+              <input type="url" placeholder="https://youtube.com/live/... or Twitch URL" className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 pl-9 pr-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50" />
               <Link className="w-3.5 h-3.5 text-slate-600 absolute left-3 top-3.5" />
             </div>
           </div>
 
           <div className="flex items-center justify-end space-x-2 pt-2">
             <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white text-xs uppercase font-bold tracking-wider h-10">Cancel</Button>
-            <Button type="submit" className="bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] text-xs font-black uppercase tracking-widest px-5 h-10 rounded-lg">Publish Lifecycle</Button>
+            <Button type="submit" className="bg-[#00FFC6] hover:bg-[#00D9A8] text-[#07090d] text-xs font-black uppercase tracking-widest px-5 h-10 rounded-lg">Publish Lifecycle</Button>
           </div>
         </form>
       </div>
@@ -155,14 +155,14 @@ export function EditEventModal({ isOpen, onClose, onConfirm, initialData }: Stan
             <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Change Game Banner Artwork</label>
             <div 
               onClick={() => fileInputRef.current?.click()}
-              className="group relative h-28 w-full rounded-xl bg-[#07090d] border border-dashed border-slate-800 hover:border-[#4ade80]/40 flex flex-col items-center justify-center gap-1 cursor-pointer overflow-hidden transition-all duration-200"
+              className="group relative h-28 w-full rounded-xl bg-[#07090d] border border-dashed border-slate-800 hover:border-[#00FFC6]/40 flex flex-col items-center justify-center gap-1 cursor-pointer overflow-hidden transition-all duration-200"
             >
               {imagePreview ? (
                 <>
                   <img src={imagePreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-luminosity group-hover:opacity-50 transition-opacity" />
                   <div className="absolute inset-0 bg-slate-950/40 group-hover:bg-slate-950/20 transition-colors" />
                   <div className="relative z-10 flex flex-col items-center text-white bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800/80 text-[10px] font-black tracking-widest uppercase gap-1">
-                    <UploadCloud className="w-3.5 h-3.5 text-[#4ade80]" />
+                    <UploadCloud className="w-3.5 h-3.5 text-[#00FFC6]" />
                     Upload / Change Image Asset
                   </div>
                 </>
@@ -180,28 +180,28 @@ export function EditEventModal({ isOpen, onClose, onConfirm, initialData }: Stan
 
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Event Title</label>
-            <input type="text" defaultValue={initialData?.title || ""} className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white focus:outline-none focus:border-[#4ade80]/50" />
+            <input type="text" defaultValue={initialData?.title || ""} className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white focus:outline-none focus:border-[#00FFC6]/50" />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Date</label>
-              <input type="text" defaultValue={initialData?.date || ""} className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white focus:outline-none focus:border-[#4ade80]/50" />
+              <input type="text" defaultValue={initialData?.date || ""} className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white focus:outline-none focus:border-[#00FFC6]/50" />
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Time</label>
-              <input type="text" defaultValue={initialData?.time || ""} className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white focus:outline-none focus:border-[#4ade80]/50" />
+              <input type="text" defaultValue={initialData?.time || ""} className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white focus:outline-none focus:border-[#00FFC6]/50" />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-wider text-[#4ade80] flex items-center gap-1"><Video className="w-3.5 h-3.5" /> Direct Broadcast Link</label>
-            <input type="url" defaultValue={initialData?.streamUrl || "https://youtube.com/watch?v=live_stream_id"} className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white focus:outline-none focus:border-[#4ade80]/50" />
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#00FFC6] flex items-center gap-1"><Video className="w-3.5 h-3.5" /> Direct Broadcast Link</label>
+            <input type="url" defaultValue={initialData?.streamUrl || "https://youtube.com/watch?v=live_stream_id"} className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white focus:outline-none focus:border-[#00FFC6]/50" />
           </div>
 
           <div className="flex items-center justify-end space-x-2 pt-2">
             <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 text-xs font-bold uppercase tracking-wider h-10">Cancel</Button>
-            <Button type="submit" className="bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] text-xs font-black uppercase tracking-widest px-5 h-10 rounded-lg">Save</Button>
+            <Button type="submit" className="bg-[#00FFC6] hover:bg-[#00D9A8] text-[#07090d] text-xs font-black uppercase tracking-widest px-5 h-10 rounded-lg">Save</Button>
           </div>
         </form>
       </div>
@@ -253,7 +253,7 @@ export function ViewReportModal({ isOpen, onClose, initialData }: StandardEventM
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-800 p-4 bg-[#07090d]">
           <h2 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
-            <FileText className="w-4 h-4 text-[#4ade80]" /> Post-Match Performance Ledger
+            <FileText className="w-4 h-4 text-[#00FFC6]" /> Post-Match Performance Ledger
           </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
             <X className="w-4 h-4" />
@@ -277,7 +277,7 @@ export function ViewReportModal({ isOpen, onClose, initialData }: StandardEventM
               </div>
               
               <div className="my-3">
-                <div className="text-3xl font-black text-[#4ade80] tracking-wider font-mono">
+                <div className="text-3xl font-black text-[#00FFC6] tracking-wider font-mono">
                   {mapScore}
                 </div>
                 <span className="text-[9px] text-emerald-400/80 uppercase font-black tracking-widest block mt-0.5">
@@ -289,7 +289,7 @@ export function ViewReportModal({ isOpen, onClose, initialData }: StandardEventM
             {/* COLUMN 2: HISTORICAL PERFORMANCE INDICATORS (THE LOCKED ANALYTICS) */}
             <div className="bg-[#07090d] border border-slate-900 rounded-xl p-4 space-y-3">
               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1 border-b border-slate-900 pb-1.5">
-                <BarChart3 className="w-3 h-3 text-[#4ade80]" /> Verified Stream Metrics
+                <BarChart3 className="w-3 h-3 text-[#00FFC6]" /> Verified Stream Metrics
               </span>
 
               <div className="space-y-2 text-[11px]">
@@ -335,7 +335,7 @@ export function ViewReportModal({ isOpen, onClose, initialData }: StandardEventM
               rel="noreferrer" 
               className="w-full sm:w-auto bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 text-xs font-bold uppercase tracking-wider px-5 h-10 rounded-xl flex items-center justify-center gap-2 transition-colors"
             >
-              Watch Match Broadcast VOD <ArrowUpRight className="w-3.5 h-3.5 text-[#4ade80]" />
+              Watch Match Broadcast VOD <ArrowUpRight className="w-3.5 h-3.5 text-[#00FFC6]" />
             </a>
           </div>
 
@@ -382,7 +382,7 @@ export function ManageStreamModal({ isOpen, onClose, initialData, onUpdateStream
               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                 <RefreshCw className="w-3 h-3 text-slate-400" /> Stream Health
               </span>
-              <div className="text-xs font-black text-[#4ade80] uppercase tracking-wide pt-0.5">EXCELLENT (1080p60)</div>
+              <div className="text-xs font-black text-[#00FFC6] uppercase tracking-wide pt-0.5">EXCELLENT (1080p60)</div>
             </div>
           </div>
 
@@ -392,7 +392,7 @@ export function ManageStreamModal({ isOpen, onClose, initialData, onUpdateStream
               <input 
                 type="text" 
                 defaultValue={initialData?.title || "Valorant Champions Tour: Regional Semi-Finals"} 
-                className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" 
+                className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50"
                 required 
               />
             </div>
@@ -403,7 +403,7 @@ export function ManageStreamModal({ isOpen, onClose, initialData, onUpdateStream
                 <input 
                   type="text" 
                   defaultValue={initialData?.subTitle || "Cloud9 vs. Team Liquid"} 
-                  className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" 
+                  className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50"
                   required 
                 />
               </div>
@@ -414,21 +414,21 @@ export function ManageStreamModal({ isOpen, onClose, initialData, onUpdateStream
                 <input 
                   type="text" 
                   defaultValue={initialData?.mapInfo || "MAP 3 • BIND"} 
-                  className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" 
+                  className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50"
                   required 
                 />
               </div>
             </div>
 
             <div className="space-y-1.5 border-t border-slate-900 pt-3">
-              <label className="text-[10px] font-black uppercase tracking-wider text-[#4ade80] flex items-center gap-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#00FFC6] flex items-center gap-1">
                 <Video className="w-3.5 h-3.5" /> Live Streaming Destination URL
               </label>
               <input 
                 type="url" 
                 defaultValue={initialData?.streamUrl || "https://www.youtube.com/watch?v=dQw4w9WgXcQ"} 
                 placeholder="YouTube Live Stream or Twitch Channel URL"
-                className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#4ade80]/50" 
+                className="w-full bg-[#07090d] border border-slate-800 rounded-lg h-10 px-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-[#00FFC6]/50"
                 required 
               />
             </div>
@@ -439,16 +439,16 @@ export function ManageStreamModal({ isOpen, onClose, initialData, onUpdateStream
               href={initialData?.streamUrl || "https://youtube.com"} 
               target="_blank" 
               rel="noreferrer"
-              className="text-slate-400 hover:text-[#4ade80] text-[10px] font-black uppercase tracking-widest flex items-center gap-1 group transition-colors"
+              className="text-slate-400 hover:text-[#00FFC6] text-[10px] font-black uppercase tracking-widest flex items-center gap-1 group transition-colors"
             >
-              Test Stream Feed <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-[#4ade80]" />
+              Test Stream Feed <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-[#00FFC6]" />
             </a>
 
             <div className="flex items-center space-x-2 w-full sm:w-auto justify-end">
               <Button type="button" variant="ghost" onClick={onClose} className="text-slate-400 hover:text-white text-xs font-bold uppercase tracking-wider h-10">
                 Cancel
               </Button>
-              <Button type="submit" className="bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] text-xs font-black uppercase tracking-widest px-5 h-10 rounded-lg shadow-md shadow-emerald-500/5">
+              <Button type="submit" className="bg-[#00FFC6] hover:bg-[#00D9A8] text-[#07090d] text-xs font-black uppercase tracking-widest px-5 h-10 rounded-lg shadow-md shadow-emerald-500/5">
                 Update Broadcast Feed
               </Button>
             </div>

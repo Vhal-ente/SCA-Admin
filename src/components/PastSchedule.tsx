@@ -123,7 +123,7 @@ export default function PastSchedule() {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between text-[9px] font-black tracking-wider">
                   <span className="text-slate-500 uppercase">{match.type}</span>
-                  <span className="text-[#4ade80] uppercase font-mono">{match.score}</span>
+                  <span className="text-[#00FFC6] uppercase font-mono">{match.score}</span>
                 </div>
                 <h3 className="text-sm font-black text-white uppercase tracking-wide leading-snug">{match.title}</h3>
                 <p className="text-[11px] text-slate-400 leading-relaxed line-clamp-2">{match.desc}</p>
@@ -132,10 +132,10 @@ export default function PastSchedule() {
               <div className="pt-3 border-t border-slate-900/60 flex items-center justify-between text-[10px] font-bold text-slate-500">
                 <span>{match.players}</span>
                 <button 
-                  className="text-white hover:text-[#4ade80] font-black uppercase text-[9px] tracking-widest flex items-center gap-1.5 transition-colors group/btn"
+                  className="text-white hover:text-[#00FFC6] font-black uppercase text-[9px] tracking-widest flex items-center gap-1.5 transition-colors group/btn"
                   onClick={() => openReport(match.id)}
                 >
-                  <FileText className="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-[#4ade80] transition-colors" />
+                  <FileText className="w-3.5 h-3.5 text-slate-500 group-hover/btn:text-[#00FFC6] transition-colors" />
                   View Report <ArrowUpRight className="w-3 h-3 text-slate-400" />
                 </button>
               </div>
@@ -177,7 +177,7 @@ export default function PastSchedule() {
                     }}
                     className={`w-8 h-8 rounded flex items-center justify-center font-mono font-bold text-xs ${
                       isActive 
-                        ? "bg-[#4ade80] text-[#07090d] hover:bg-[#4ade80] hover:text-[#07090d]" 
+                        ? "bg-[#00FFC6] text-[#07090d] hover:bg-[#00FFC6] hover:text-[#07090d]"
                         : "bg-slate-950 border border-slate-900 text-slate-400 hover:text-white"
                     }`}
                   >

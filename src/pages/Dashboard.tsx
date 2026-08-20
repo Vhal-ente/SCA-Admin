@@ -1,16 +1,26 @@
 import { StatCard } from "@/components/StatCard";
 import { Card } from "@/components/ui/card";
-import { Trophy, Users, Gamepad2, Target, Clock } from "lucide-react";
+import { Trophy, Users, Gamepad2, Target, Clock, Shield } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { initialTournaments } from "@/data/tournaments";
+import { currentLeagues } from "@/data/leagues";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
+  const openTournament = (tournamentId: number) => {
+    navigate("/tournaments", { state: { tournamentId } });
+  };
+
   return (
-    <div className="p-8 space-y-8">
-      <div>
-        <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
+    <div className="p-5 md:p-8 lg:p-10 space-y-8 max-w-[1600px] mx-auto">
+      <div className="border-b border-border pb-6">
+        <p className="sca-eyebrow mb-3">SCA Control Centre</p>
+        <h1 className="text-4xl font-semibold tracking-tight text-foreground mb-2">Dashboard</h1>
         <p className="text-muted-foreground">Welcome back! Here's your tournament overview.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden border border-border bg-border">
         <StatCard
           title="Total Tournaments"
           value="24"
@@ -36,62 +46,67 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 bg-gradient-card border-border">
-          <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+        <Card className="p-6 bg-card border-border rounded-sm shadow-none">
+          <p className="sca-eyebrow mb-3">Next in the arena</p>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-5 flex items-center gap-2">
             <Clock className="w-5 h-5 text-primary" />
             Upcoming Tournaments
           </h2>
           <div className="space-y-4">
-            {[
-              { name: "CODM Championship 2025", date: "Jan 15, 2025", teams: 16 },
-              { name: "MLBB Spring League", date: "Jan 20, 2025", teams: 24 },
-              { name: "Valorant Masters", date: "Feb 1, 2025", teams: 12 },
-            ].map((tournament, index) => (
-              <div
-                key={index}
-                className="p-4 bg-secondary rounded-lg border border-border hover:border-primary transition-all duration-300"
+            {initialTournaments.map((tournament) => (
+              <button
+                type="button"
+                key={tournament.id}
+                onClick={() => openTournament(tournament.id)}
+                className="w-full p-4 bg-secondary rounded-sm border border-border hover:border-primary/60 transition-colors duration-200"
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-foreground">{tournament.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{tournament.date}</p>
+                <div className="flex justify-between items-start gap-4 text-left">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground group-hover:text-primary">{tournament.name}</h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {new Date(`${tournament.startDate}T00:00:00`).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </p>
                   </div>
-                  <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
-                    {tournament.teams} teams
+                  <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2 py-1 rounded-sm">
+                    {tournament.teams} {tournament.mode === "Team" ? "teams" : "players"}
                   </span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </Card>
 
-        <Card className="p-6 bg-gradient-card border-border">
-          <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-accent" />
-            Top Performing Teams
+        <Card className="p-6 bg-card border-border rounded-sm shadow-none">
+          <p className="sca-eyebrow mb-3">Seasonal play</p>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground mb-5 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-primary" />
+            Current Leagues
           </h2>
           <div className="space-y-4">
-            {[
-              { name: "Phoenix Esports", wins: 45, rank: 1 },
-              { name: "Dragon Force", wins: 42, rank: 2 },
-              { name: "Storm Raiders", wins: 38, rank: 3 },
-            ].map((team) => (
-              <div
-                key={team.rank}
-                className="flex items-center justify-between p-4 bg-secondary rounded-lg border border-border hover:border-accent transition-all duration-300"
+            {currentLeagues.map((league) => (
+              <button
+                type="button"
+                key={league.id}
+                onClick={() => navigate("/league")}
+                className="w-full flex items-center justify-between gap-4 p-4 text-left bg-secondary rounded-sm border border-border hover:border-primary/60 transition-colors duration-200"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                    team.rank === 1 ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
-                  }`}>
-                    #{team.rank}
+                  <div className="w-9 h-9 rounded-sm border border-primary/20 bg-primary/10 text-primary flex items-center justify-center">
+                    <Shield className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">{team.name}</h3>
-                    <p className="text-sm text-muted-foreground">{team.wins} wins</p>
+                    <h3 className="font-semibold text-foreground">{league.name}</h3>
+                    <p className="text-sm text-muted-foreground">{league.description}</p>
                   </div>
                 </div>
-              </div>
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-primary">
+                  {league.status}
+                </span>
+              </button>
             ))}
           </div>
         </Card>

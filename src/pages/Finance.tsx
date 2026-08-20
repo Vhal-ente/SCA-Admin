@@ -1,274 +1,74 @@
-import React, { useState } from 'react';
-import { 
-  DollarSign, 
-  CreditCard, 
-  Clock, 
-  CheckCircle2, 
-  Bell, 
-  User 
-} from 'lucide-react';
+import { useMemo, useState } from "react";
+import {
+  ArrowDownLeft, ArrowLeft, ArrowUpRight, BellRing, CheckCircle2, Clock3,
+  CreditCard, DollarSign, Download, ShieldAlert, UserRoundCheck, WalletCards,
+} from "lucide-react";
 import TransactionsTab from "@/components/Transactions";
 import PaymentsTab from "@/components/Payments";
 
-// --- Types & Interfaces ---
-interface SettlementRow {
-  id: string;
-  leagueName: string;
-  badgeText: string;
-  badgeBg: string;
-  payoutDate: string;
-  participants: string;
-  totalPool: string;
-  status: 'SETTLED' | 'IN PROGRESS' | 'UPCOMING';
-}
+type SubTab = "overview" | "transactions" | "settings";
+type CompetitionType = "Tournament" | "League";
+type WinnerStatus = "Awaiting approval" | "Approved" | "Paid" | "Account required" | "Disqualified";
+type Winner = { id: number; place: number; name: string; email: string; bank: string; accountNumber: string; amount: number; status: WinnerStatus };
+type Settlement = { id: number; name: string; type: CompetitionType; participants: string; pool: number; payout: string; status: "Ready" | "Processing" | "Scheduled"; winners: Winner[] };
 
-// Added 'overview' to type matching your UI button goals
-type SubTab = 'overview' | 'transactions' | 'settings';
-
-// --- Mock Data ---
-const settlementData: SettlementRow[] = [
-  { 
-    id: '1', 
-    leagueName: 'Void Series: Alpha', 
-    badgeText: 'VS', 
-    badgeBg: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30', 
-    payoutDate: 'Oct 24, 2023', 
-    participants: '64 Teams', 
-    totalPool: '$12,000.00', 
-    status: 'SETTLED' 
-  },
-  { 
-    id: '2', 
-    leagueName: 'Cyber Hunter Invitational', 
-    badgeText: 'CH', 
-    badgeBg: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30', 
-    payoutDate: 'Nov 12, 2023', 
-    participants: '128 Teams', 
-    totalPool: '$25,500.00', 
-    status: 'IN PROGRESS' 
-  },
-  { 
-    id: '3', 
-    leagueName: 'Neon Knight Cup', 
-    badgeText: 'NK', 
-    badgeBg: 'bg-rose-500/20 text-rose-400 border-rose-500/30', 
-    payoutDate: 'Nov 28, 2023', 
-    participants: '32 Teams', 
-    totalPool: '$4,200.00', 
-    status: 'UPCOMING' 
-  },
+const initialSettlements: Settlement[] = [
+  { id: 1, name: "SCA Warzone Clash", type: "Tournament", participants: "256 teams", pool: 10000, payout: "Aug 29, 2026", status: "Ready", winners: [
+    { id: 11, place: 1, name: "Sentinels Alpha", email: "captain@sentinels.gg", bank: "Access Bank", accountNumber: "0123456789", amount: 6000, status: "Awaiting approval" },
+    { id: 12, place: 2, name: "Fnatic Rising", email: "finance@fnatic.gg", bank: "GTBank", accountNumber: "0234567891", amount: 2500, status: "Approved" },
+    { id: 13, place: 3, name: "Natus Vincere", email: "admin@navi.gg", bank: "", accountNumber: "", amount: 1500, status: "Account required" },
+  ]},
+  { id: 2, name: "Academius Games", type: "League", participants: "16 teams", pool: 30000, payout: "Sep 12, 2026", status: "Processing", winners: [
+    { id: 21, place: 1, name: "Academius Prime", email: "prime@academius.gg", bank: "First Bank", accountNumber: "1029384756", amount: 18000, status: "Approved" },
+    { id: 22, place: 2, name: "Atlas Esports", email: "owner@atlas.gg", bank: "UBA", accountNumber: "1122334455", amount: 7500, status: "Paid" },
+    { id: 23, place: 3, name: "Vortex Gaming", email: "vortex@example.com", bank: "Zenith Bank", accountNumber: "5566778899", amount: 4500, status: "Awaiting approval" },
+  ]},
+  { id: 3, name: "SCA Mobile Masters", type: "Tournament", participants: "64 players", pool: 5000, payout: "Sep 20, 2026", status: "Scheduled", winners: [
+    { id: 31, place: 1, name: "Adewale ‘Ace’ Bello", email: "ace@example.com", bank: "", accountNumber: "", amount: 3000, status: "Account required" },
+    { id: 32, place: 2, name: "Mira Stone", email: "mira@example.com", bank: "Kuda", accountNumber: "3344556677", amount: 1250, status: "Awaiting approval" },
+    { id: 33, place: 3, name: "Tobi Ray", email: "tobi@example.com", bank: "OPay", accountNumber: "7788990011", amount: 750, status: "Awaiting approval" },
+  ]},
 ];
 
-const Finance = () => {
-  // Set default state tab to overview to show the main overview page layout first
-  const [activeTab, setActiveTab] = useState<SubTab>('overview');
+const money = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
 
-  return (
-    <div className="p-8 space-y-6 w-full text-[#94a3b8] font-sans antialiased">
-      
-      {/* --- TOP BRAND / ACTION BAR --- */}
-      <header className="flex justify-between items-center w-full">
-        <div>
-          <h1 className="text-3xl font-black text-white tracking-wide">Finance</h1>
-          <p className="text-xs text-slate-500 mt-1">Manage revenue, registration fees, and payouts across all active leagues.</p>
-        </div>
-        
-        {/* Right Corner Shell Utilities */}
-        <div className="flex items-center space-x-4">
-          <button className="p-2 bg-[#0f141c] text-slate-400 hover:text-white rounded-lg border border-[#1e293b]/40 transition-colors relative">
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-emerald-400 rounded-full" />
-          </button>
-          <button className="p-2 bg-[#0f141c] text-slate-400 hover:text-white rounded-lg border border-[#1e293b]/40 transition-colors">
-            <User className="w-4 h-4" />
-          </button>
-        </div>
-      </header>
+export default function Finance() {
+  const [activeTab, setActiveTab] = useState<SubTab>("overview");
+  const [settlements, setSettlements] = useState(initialSettlements);
+  const [filter, setFilter] = useState<"All" | CompetitionType>("All");
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [replacement, setReplacement] = useState<Record<number, string>>({});
+  const [notice, setNotice] = useState("");
+  const selected = settlements.find(item => item.id === selectedId);
+  const filtered = useMemo(() => settlements.filter(item => filter === "All" || item.type === filter), [settlements, filter]);
 
-      {/* --- PANEL TITLE & SUB TABS NAVIGATION --- */}
-      <section className="border-b border-[#1e293b]/30 pb-px">
-        <div className="flex items-center space-x-6 text-xs font-bold tracking-wide">
-          <button 
-            onClick={() => setActiveTab('overview')}
-            className={`pb-2 transition-all relative ${activeTab === 'overview' ? 'text-[#4ade80] font-black' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            Overview
-            {activeTab === 'overview' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4ade80]" />}
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab('transactions')}
-            className={`pb-2 transition-all relative ${activeTab === 'transactions' ? 'text-[#4ade80] font-black' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            Transactions
-            {activeTab === 'transactions' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4ade80]" />}
-          </button>
-          
-          <button 
-            onClick={() => setActiveTab('settings')}
-            className={`pb-2 transition-all relative ${activeTab === 'settings' ? 'text-[#4ade80] font-black' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            Payment Settings
-            {activeTab === 'settings' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4ade80]" />}
-          </button>
-        </div>
-      </section>
+  const updateWinner = (winnerId: number, status: WinnerStatus) => {
+    if (!selected) return;
+    setSettlements(items => items.map(item => item.id === selected.id ? { ...item, winners: item.winners.map(winner => winner.id === winnerId ? { ...winner, status } : winner) } : item));
+  };
+  const replaceWinner = (winnerId: number) => {
+    const name = replacement[winnerId]?.trim();
+    if (!selected || !name) return;
+    setSettlements(items => items.map(item => item.id === selected.id ? { ...item, winners: item.winners.map(winner => winner.id === winnerId ? { ...winner, name, email: "Account details pending", bank: "", accountNumber: "", status: "Account required" } : winner) } : item));
+    setReplacement(values => ({ ...values, [winnerId]: "" }));
+    setNotice(`${name} is now assigned to that winning position.`);
+  };
 
-      {/* --- CONDITIONAL VIEWPORTS RENDER LAYER --- */}
-      <main className="w-full transition-all duration-150">
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* METRICS & HISTOGRAM CARDS GRID */}
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Card 1: Total Revenue */}
-              <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-2xl p-5 flex flex-col justify-between space-y-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Total Revenue</p>
-                    <p className="text-3xl font-black text-white mt-1 tracking-tight">$45,200.00</p>
-                    <p className="text-[10px] text-[#4ade80] font-bold mt-1">↑ +12.5% <span className="text-slate-500 font-medium">vs last month</span></p>
-                  </div>
-                  <div className="p-2 bg-[#142324] rounded-lg border border-[#4ade80]/20 text-[#4ade80]">
-                    <DollarSign className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-end justify-between h-14 pt-2 px-1 gap-1.5">
-                  <div className="bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors w-full h-[35%] rounded" />
-                  <div className="bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors w-full h-[25%] rounded" />
-                  <div className="bg-emerald-500/10 hover:bg-emerald-500/20 transition-colors w-full h-[45%] rounded" />
-                  <div className="bg-emerald-500/20 hover:bg-emerald-500/30 transition-colors w-full h-[35%] rounded" />
-                  <div className="bg-emerald-500/20 hover:bg-emerald-500/30 transition-colors w-full h-[55%] rounded" />
-                  <div className="bg-[#4ade80] shadow-[0_0_12px_rgba(74,222,128,0.4)] w-full h-[85%] rounded" />
-                </div>
-              </div>
+  const metrics = [
+    { label: "Gross revenue", value: "$45,200", note: "+12.5% this month", icon: DollarSign, tone: "text-primary" },
+    { label: "Registration fees", value: "$12,450", note: "418 paid entries", icon: CreditCard, tone: "text-primary" },
+    { label: "Pending payouts", value: money(settlements.flatMap(s => s.winners).filter(w => w.status !== "Paid" && w.status !== "Disqualified").reduce((sum, w) => sum + w.amount, 0)), note: "Super Admin approval required", icon: Clock3, tone: "text-amber-500" },
+    { label: "Settled", value: money(settlements.flatMap(s => s.winners).filter(w => w.status === "Paid").reduce((sum, w) => sum + w.amount, 0)), note: "Manual settlement register", icon: CheckCircle2, tone: "text-emerald-500" },
+  ];
 
-              {/* Card 2: Registration Fees */}
-              <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-2xl p-5 flex flex-col justify-between space-y-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Registration Fees</p>
-                    <p className="text-3xl font-black text-white mt-1 tracking-tight">$12,450.00</p>
-                    <p className="text-[10px] text-[#4ade80] font-bold mt-1">↑ +5.2% <span className="text-slate-500 font-medium">per active team</span></p>
-                  </div>
-                  <div className="p-2 bg-cyan-950/40 rounded-lg border border-cyan-500/20 text-cyan-400">
-                    <CreditCard className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-end justify-between h-14 pt-2 px-1 gap-1.5">
-                  <div className="bg-cyan-500/10 hover:bg-cyan-500/20 transition-colors w-full h-[25%] rounded" />
-                  <div className="bg-cyan-500/10 hover:bg-cyan-500/20 transition-colors w-full h-[30%] rounded" />
-                  <div className="bg-cyan-500/20 hover:bg-cyan-500/30 transition-colors w-full h-[55%] rounded" />
-                  <div className="bg-cyan-500/20 hover:bg-cyan-500/30 transition-colors w-full h-[40%] rounded" />
-                  <div className="bg-cyan-500/30 hover:bg-cyan-500/40 transition-colors w-full h-[50%] rounded" />
-                  <div className="bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.4)] w-full h-[75%] rounded" />
-                </div>
-              </div>
-
-              {/* Card 3: Pending Payments */}
-              <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-2xl p-5 flex flex-col justify-between space-y-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pending Payments</p>
-                    <p className="text-3xl font-black text-white mt-1 tracking-tight">$3,100.00</p>
-                    <p className="text-[10px] text-rose-400 font-bold mt-1">↓ -2.1% <span className="text-slate-500 font-medium">unresolved invoices</span></p>
-                  </div>
-                  <div className="p-2 bg-rose-950/40 rounded-lg border border-rose-500/20 text-rose-400">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-end justify-between h-14 pt-2 px-1 gap-1.5">
-                  <div className="bg-rose-500/30 hover:bg-rose-500/40 transition-colors w-full h-[65%] rounded" />
-                  <div className="bg-rose-500/25 hover:bg-rose-500/35 transition-colors w-full h-[50%] rounded" />
-                  <div className="bg-rose-500/20 hover:bg-rose-500/30 transition-colors w-full h-[45%] rounded" />
-                  <div className="bg-rose-500/15 hover:bg-rose-500/25 transition-colors w-full h-[30%] rounded" />
-                  <div className="bg-rose-500/10 hover:bg-rose-500/20 transition-colors w-full h-[25%] rounded" />
-                  <div className="bg-rose-500/20 hover:bg-rose-500/30 transition-colors w-full h-[15%] rounded" />
-                </div>
-              </div>
-
-              {/* Card 4: Successful Transactions */}
-              <div className="bg-[#0f141c] border border-[#1e293b]/40 rounded-2xl p-5 flex flex-col justify-between space-y-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Successful Transactions</p>
-                    <p className="text-3xl font-black text-white mt-1 tracking-tight">1,248</p>
-                    <p className="text-[10px] text-[#4ade80] font-bold mt-1">↑ +8.7% <span className="text-slate-500 font-medium">cleared volume</span></p>
-                  </div>
-                  <div className="p-2 bg-emerald-950/40 rounded-lg border border-emerald-500/20 text-emerald-400">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                </div>
-                <div className="flex items-end justify-between h-14 pt-2 px-1 gap-1.5">
-                  <div className="bg-teal-500/10 hover:bg-teal-500/20 transition-colors w-full h-[20%] rounded" />
-                  <div className="bg-teal-500/15 hover:bg-teal-500/25 transition-colors w-full h-[35%] rounded" />
-                  <div className="bg-teal-500/20 hover:bg-teal-500/30 transition-colors w-full h-[25%] rounded" />
-                  <div className="bg-teal-500/25 hover:bg-teal-500/35 transition-colors w-full h-[40%] rounded" />
-                  <div className="bg-teal-500/40 hover:bg-teal-500/50 transition-colors w-full h-[60%] rounded" />
-                  <div className="bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.4)] w-full h-[80%] rounded" />
-                </div>
-              </div>
-            </section>
-
-            {/* LEAGUE SETTLEMENT STATUS TABLE CARD */}
-            <section className="bg-[#0f141c] border border-[#1e293b]/40 rounded-2xl p-5 flex flex-col space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-bold text-white tracking-wide">League Settlement Status</h3>
-                <button className="text-[10px] uppercase font-bold tracking-widest text-slate-400 hover:text-white transition-colors">
-                  View All Records
-                </button>
-              </div>
-
-              <div className="overflow-x-auto w-full">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="text-slate-500 border-b border-[#1e293b]/30 uppercase tracking-wider text-[9px] font-semibold">
-                      <th className="pb-3">League Name</th>
-                      <th className="pb-3">Payout Date</th>
-                      <th className="pb-3">Participants</th>
-                      <th className="pb-3">Total Pool</th>
-                      <th className="pb-3 text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#1e293b]/20 font-medium">
-                    {settlementData.map((row) => (
-                      <tr key={row.id} className="hover:bg-[#141b26]/30 transition-colors group">
-                        <td className="py-4">
-                          <div className="flex items-center space-x-3">
-                            <div className={`w-6 h-6 border rounded text-[9px] font-black flex items-center justify-center tracking-tighter ${row.badgeBg}`}>
-                              {row.badgeText}
-                            </div>
-                            <span className="text-white font-bold tracking-wide group-hover:text-[#4ade80] transition-colors">
-                              {row.leagueName}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-4 text-slate-400 font-medium">{row.payoutDate}</td>
-                        <td className="py-4 text-slate-300 font-medium">{row.participants}</td>
-                        <td className="py-4 text-white font-bold">{row.totalPool}</td>
-                        <td className="py-4 text-right">
-                          <span className={`inline-block px-1.5 py-0.5 text-[8px] font-black tracking-widest rounded-sm ${
-                            row.status === 'SETTLED' ? 'bg-emerald-950/60 border border-emerald-500/20 text-emerald-400' :
-                            row.status === 'IN PROGRESS' ? 'bg-cyan-950/60 border border-cyan-500/20 text-cyan-400' :
-                            'bg-slate-900 border border-slate-700/50 text-slate-400'
-                          }`}>
-                            {row.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </div>
-        )}
-
-        {/* Dynamic sub-tab triggers */}
-        {activeTab === 'transactions' && <TransactionsTab />}
-        {activeTab === 'settings' && <PaymentsTab />}
-      </main>
-    </div>
-  );
-};
-
-export default Finance;
+  return <div className="min-h-screen bg-background p-5 text-foreground md:p-8 lg:p-10"><div className="mx-auto max-w-[1600px]">
+    <header className="flex flex-col gap-6 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between"><div><p className="sca-eyebrow mb-3">Financial operations</p><h1 className="text-4xl font-semibold tracking-tight md:text-5xl">Finance</h1><p className="mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">Review competition winners and manually authorize every prize settlement.</p></div><button className="inline-flex h-12 items-center justify-center gap-2 border border-border bg-card px-5 text-xs font-bold uppercase tracking-wider hover:border-primary hover:text-primary"><Download className="h-4 w-4" /> Export report</button></header>
+    <nav className="flex gap-1 overflow-x-auto border-b border-border py-5">{([['overview','Overview'],['transactions','Transactions'],['settings','Payment settings']] as const).map(([value,label]) => <button key={value} onClick={() => setActiveTab(value)} className={`min-w-fit border-b-2 px-5 py-3 text-xs font-bold uppercase tracking-[0.14em] ${activeTab === value ? 'border-primary bg-primary/5 text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>{label}</button>)}</nav>
+    <main className="py-8">{activeTab === "overview" && <div className="space-y-7">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{metrics.map(({label,value,note,icon:Icon,tone}) => <article key={label} className="border border-border bg-card p-6"><div className="flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">{label}</p><p className="mt-3 text-3xl font-semibold tracking-tight">{value}</p></div><span className={`flex h-11 w-11 items-center justify-center border border-border bg-background ${tone}`}><Icon className="h-5 w-5" /></span></div><p className={`mt-6 border-t border-border pt-4 text-xs font-semibold ${tone}`}>{note}</p></article>)}</section>
+      {!selected ? <section className="grid gap-5 xl:grid-cols-[1.5fr_.7fr]"><article className="border border-border bg-card"><div className="flex flex-col gap-4 border-b border-border p-6 md:flex-row md:items-center md:justify-between"><div><p className="sca-eyebrow mb-2">Prize disbursement</p><h2 className="text-2xl font-semibold">Settlements by competition</h2><p className="mt-1 text-sm text-muted-foreground">Select a tournament or league to inspect its winners and approve payouts.</p></div><div className="flex gap-2">{(["All", "Tournament", "League"] as const).map(value => <button key={value} onClick={() => setFilter(value)} className={`border px-4 py-2 text-[10px] font-bold uppercase tracking-wider ${filter === value ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>{value}</button>)}</div></div><div className="divide-y divide-border">{filtered.map(row => <button key={row.id} onClick={() => setSelectedId(row.id)} className="grid w-full gap-3 p-5 text-left transition-colors hover:bg-secondary/30 md:grid-cols-[1.5fr_.7fr_.7fr_.7fr_auto] md:items-center"><div><p className="font-bold">{row.name}</p><p className="mt-1 text-xs text-muted-foreground">{row.type} · {row.participants}</p></div><p className="text-sm font-bold text-primary">{money(row.pool)}</p><p className="text-sm text-muted-foreground">{row.winners.length} winners</p><p className="text-sm text-muted-foreground">{row.payout}</p><span className="border border-primary/30 px-3 py-1 text-[9px] font-bold uppercase text-primary">Review</span></button>)}</div></article>
+      <aside className="border border-border bg-card p-6"><p className="sca-eyebrow mb-2">Approval policy</p><h2 className="text-2xl font-semibold">Manual control</h2><div className="mt-6 space-y-4 text-sm text-muted-foreground"><p className="flex gap-3"><UserRoundCheck className="h-5 w-5 shrink-0 text-primary" />Only a Super Admin can approve or settle prize payments.</p><p className="flex gap-3"><ShieldAlert className="h-5 w-5 shrink-0 text-amber-500" />Disqualification records remain visible for audit purposes.</p><p className="flex gap-3"><WalletCards className="h-5 w-5 shrink-0 text-primary" />Account details are reviewed before settlement.</p></div></aside></section> : <section className="border border-border bg-card"><div className="flex flex-col gap-5 border-b border-border p-6 md:flex-row md:items-center md:justify-between"><div><button onClick={() => { setSelectedId(null); setNotice(""); }} className="mb-4 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary"><ArrowLeft className="h-4 w-4" /> Back to settlements</button><p className="sca-eyebrow mb-2">{selected.type} settlement</p><h2 className="text-2xl font-semibold">{selected.name}</h2><p className="mt-2 text-sm text-muted-foreground">{money(selected.pool)} prize pool · payout target {selected.payout}</p></div><div className="border border-primary/30 bg-primary/5 px-4 py-3 text-xs font-semibold text-primary">Super Admin authorization</div></div>{notice && <p className="border-b border-primary/20 bg-primary/5 px-6 py-3 text-sm text-primary">{notice}</p>}<div className="divide-y divide-border">{selected.winners.map(winner => <article key={winner.id} className="grid gap-5 p-6 xl:grid-cols-[90px_1.3fr_1fr_.7fr] xl:items-start"><div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Position</p><p className="mt-2 text-3xl font-semibold text-primary">#{winner.place}</p></div><div><h3 className="text-lg font-bold">{winner.name}</h3><p className="mt-1 text-sm text-muted-foreground">{winner.email}</p><p className="mt-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Bank account</p><p className="mt-1 text-sm">{winner.accountNumber ? `${winner.bank} · ${winner.accountNumber}` : "No payout account supplied"}</p><button onClick={() => setNotice(`Account update reminder sent to ${winner.email}.`)} className="mt-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary"><BellRing className="h-4 w-4" /> Ping user</button></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Replace winner</p><div className="mt-2 flex"><input value={replacement[winner.id] || ""} onChange={event => setReplacement(values => ({ ...values, [winner.id]: event.target.value }))} placeholder="Replacement player or team" className="h-11 min-w-0 flex-1 border border-border bg-background px-3 text-sm outline-none focus:border-primary"/><button onClick={() => replaceWinner(winner.id)} className="border border-l-0 border-border px-3 text-xs font-bold uppercase hover:text-primary">Change</button></div><button onClick={() => updateWinner(winner.id, "Disqualified")} className="mt-3 text-xs font-bold uppercase tracking-wider text-destructive">Disqualify winner</button></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Payout</p><p className="mt-2 text-xl font-bold">{money(winner.amount)}</p><span className={`mt-3 inline-block border px-2 py-1 text-[9px] font-bold uppercase ${winner.status === "Paid" ? "border-emerald-500/30 text-emerald-500" : winner.status === "Disqualified" ? "border-destructive/30 text-destructive" : "border-amber-500/30 text-amber-500"}`}>{winner.status}</span><div className="mt-4 grid gap-2"><button disabled={!winner.accountNumber || winner.status === "Disqualified" || winner.status === "Paid"} onClick={() => updateWinner(winner.id, "Approved")} className="h-10 bg-primary px-3 text-xs font-bold uppercase text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40">Approve payment</button><button disabled={winner.status !== "Approved"} onClick={() => updateWinner(winner.id, "Paid")} className="h-10 border border-border px-3 text-xs font-bold uppercase disabled:cursor-not-allowed disabled:opacity-40">Mark settled</button></div></div></article>)}</div></section>}
+      <section className="grid gap-4 sm:grid-cols-3"><div className="flex items-center gap-4 border border-border bg-card p-5"><ArrowDownLeft className="h-5 w-5 text-emerald-500"/><div><p className="text-xs text-muted-foreground">Money received</p><p className="font-bold">$18,720</p></div></div><div className="flex items-center gap-4 border border-border bg-card p-5"><ArrowUpRight className="h-5 w-5 text-rose-500"/><div><p className="text-xs text-muted-foreground">Payouts sent</p><p className="font-bold">$9,840</p></div></div><div className="border border-border bg-card p-5"><p className="text-xs text-muted-foreground">Net movement</p><p className="mt-1 text-xl font-bold text-primary">+$8,880</p></div></section>
+    </div>}{activeTab === "transactions" && <TransactionsTab />}{activeTab === "settings" && <PaymentsTab />}</main>
+  </div></div>;
+}

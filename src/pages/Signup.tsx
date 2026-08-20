@@ -25,7 +25,7 @@ export default function SignupPage() {
   };    
 
   return (
-    <div className="min-h-screen bg-[#07090d] text-[#94a3b8] font-sans antialiased flex flex-col justify-between selection:bg-[#4ade80]/30 selection:text-white">
+    <div className="min-h-screen bg-[#07090d] text-[#94a3b8] font-sans antialiased flex flex-col justify-between selection:bg-[#00FFC6]/30 selection:text-white">
       
       {/* --- TOP BRANDING NAV --- */}
       <nav className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#1e293b]/10">
@@ -106,21 +106,21 @@ export default function SignupPage() {
                 </div>
 
                 <div className="flex items-start space-x-2 pt-1">
-                  <Checkbox id="terms-signup" className="mt-0.5 border-[#1e293b] data-[state=checked]:bg-[#4ade80] data-[state=checked]:text-[#07090d]" required />
+                  <Checkbox id="terms-signup" className="mt-0.5 border-[#1e293b] data-[state=checked]:bg-[#00FFC6] data-[state=checked]:text-[#07090d]" required />
                   <label htmlFor="terms-signup" className="text-[10px] text-slate-500 font-bold leading-tight cursor-pointer select-none">
-                    I accept the <a href="#terms" className="text-[#4ade80] hover:underline">Terms of Service</a> and acknowledge the <a href="#privacy" className="text-[#4ade80] hover:underline">Privacy Protocol</a>.
+                    I accept the <a href="#terms" className="text-[#00FFC6] hover:underline">Terms of Service</a> and acknowledge the <a href="#privacy" className="text-[#00FFC6] hover:underline">Privacy Protocol</a>.
                   </label>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] font-black text-xs uppercase tracking-widest h-10 rounded-xl flex items-center justify-center space-x-1.5 transition-all">
+              <Button type="submit" className="w-full bg-[#00FFC6] hover:bg-[#00D9A8] text-[#07090d] font-black text-xs uppercase tracking-widest h-10 rounded-xl flex items-center justify-center space-x-1.5 transition-all">
                 <span>Create Operative Account</span>
                 <ArrowRight className="w-3.5 h-3.5 stroke-[3]" />
               </Button>
 
               <p className="text-center text-[10px] text-slate-500 font-bold pt-1">
                 Already synced with the grid?{" "}
-                <button type="button" onClick={onNavigateToLogin} className="text-[#4ade80] hover:underline font-black uppercase tracking-wider text-[9px] ml-0.5">
+                <button type="button" onClick={onNavigateToLogin} className="text-[#00FFC6] hover:underline font-black uppercase tracking-wider text-[9px] ml-0.5">
                   Log in here
                 </button>
               </p>
