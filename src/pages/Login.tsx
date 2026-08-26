@@ -21,7 +21,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#07090d] text-[#94a3b8] font-sans antialiased flex flex-col justify-between selection:bg-[#4ade80]/30 selection:text-white">
+    <div className="min-h-screen bg-[#07090d] text-[#94a3b8] font-sans antialiased flex flex-col justify-between selection:bg-[#00FFC6]/30 selection:text-white">
       
       {/* --- TOP BRANDING NAV --- */}
       <nav className="w-full max-w-7xl mx-auto px-6 py-5 flex items-center justify-between border-b border-[#1e293b]/10">
@@ -39,18 +39,18 @@ export default function LoginPage() {
           
           {/* LEFT DECORATIVE ACCENT LAYER */}
           <div className="md:col-span-5 relative bg-[#07090d] p-8 flex flex-col justify-between overflow-hidden border-r border-[#1e293b]/20">
-            <div className="absolute -top-40 -left-40 w-80 h-80 bg-[#4ade80]/5 rounded-full blur-[120px]" />
+            <div className="absolute -top-40 -left-40 w-80 h-80 bg-[#00FFC6]/5 rounded-full blur-[120px]" />
             <div className="relative z-10 my-auto space-y-4">
               <h2 className="text-3xl font-black text-white tracking-tight uppercase leading-none">
                 Ascend to the <br />
-                <span className="text-[#4ade80] italic font-black text-4xl">Echelon</span>
+                <span className="text-[#00FFC6] italic font-black text-4xl">Echelon</span>
               </h2>
               <p className="text-xs text-slate-400 leading-relaxed max-w-[240px]">
                 Enter the high-frequency arena where data meets destiny. Your kinetic journey begins here.
               </p>
               <div className="pt-6 flex items-center space-x-2">
-                <div className="h-1 w-12 bg-[#4ade80] rounded-full animate-pulse" />
-                <span className="text-[9px] font-black tracking-widest text-[#4ade80] uppercase">System Online: Sector 7G</span>
+                <div className="h-1 w-12 bg-[#00FFC6] rounded-full animate-pulse" />
+                <span className="text-[9px] font-black tracking-widest text-[#00FFC6] uppercase">System Online: Sector 7G</span>
               </div>
             </div>
           </div>
@@ -68,7 +68,7 @@ export default function LoginPage() {
                   <Label className="text-slate-500 uppercase tracking-wider text-[9px] font-black">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
-                    <Input type="email" placeholder="commander@void.io" className="bg-[#07090d] border border-[#1e293b]/60 rounded-xl pl-9 text-xs text-white placeholder-slate-700 h-10 focus-visible:ring-0 focus-visible:border-[#4ade80]/40 transition-colors" required />
+                    <Input type="email" placeholder="commander@void.io" className="bg-[#07090d] border border-[#1e293b]/60 rounded-xl pl-9 text-xs text-white placeholder-slate-700 h-10 focus-visible:ring-0 focus-visible:border-[#00FFC6]/40 transition-colors" required />
                   </div>
                 </div>
 
@@ -79,21 +79,21 @@ export default function LoginPage() {
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
-                    <Input type="password" placeholder="••••••••••••" className="bg-[#07090d] border border-[#1e293b]/60 rounded-xl pl-9 text-xs text-white placeholder-slate-700 h-10 focus-visible:ring-0 focus-visible:border-[#4ade80]/40 transition-colors" required />
+                    <Input type="password" placeholder="••••••••••••" className="bg-[#07090d] border border-[#1e293b]/60 rounded-xl pl-9 text-xs text-white placeholder-slate-700 h-10 focus-visible:ring-0 focus-visible:border-[#00FFC6]/40 transition-colors" required />
                   </div>
                    <div className="flex items-center space-y-2 right-0 justify-end">
-                    <a href="#reset" className="text-[9px] text-[#4ade80] hover:underline font-black uppercase tracking-wider">Forgot Key?</a>
+                    <a href="#reset" className="text-[9px] text-[#00FFC6] hover:underline font-black uppercase tracking-wider">Forgot Key?</a>
                   </div>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-[#4ade80] hover:bg-[#3ec973] text-[#07090d] font-black text-xs uppercase tracking-widest h-10 rounded-xl shadow-lg shadow-emerald-500/10 transition-all transform active:scale-[0.99]">
+              <Button type="submit" className="w-full bg-[#00FFC6] hover:bg-[#00D9A8] text-[#07090d] font-black text-xs uppercase tracking-widest h-10 rounded-xl shadow-lg shadow-emerald-500/10 transition-all transform active:scale-[0.99]">
                 Establish Connection
               </Button>
 
               <p className="text-center text-[10px] text-slate-500 font-bold">
                 New to the void?{" "}
-                <button type="button" onClick={onNavigateToSignup} className="text-[#4ade80] hover:underline font-black ml-0.5">
+                <button type="button" onClick={onNavigateToSignup} className="text-[#00FFC6] hover:underline font-black ml-0.5">
                   Join the fleet
                 </button>
               </p>

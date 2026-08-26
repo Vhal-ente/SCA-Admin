@@ -122,7 +122,7 @@ export default function UpcomingSchedule() {
               {/* Highlight Status Vector Bar Line */}
               <div
                 className={`absolute top-3 bottom-3 left-0 w-[3px] rounded-r-full transition-colors duration-200 ${
-                  event.status === "CONFIRMED" ? "bg-[#4ade80]" : "bg-amber-500"
+                  event.status === "CONFIRMED" ? "bg-[#00FFC6]" : "bg-amber-500"
                 }`}
               />
 
@@ -138,7 +138,7 @@ export default function UpcomingSchedule() {
                 
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <span className="text-[9px] font-black tracking-widest bg-slate-800 px-2 py-0.5 rounded text-[#4ade80] border border-slate-700/50">
+                    <span className="text-[9px] font-black tracking-widest bg-slate-800 px-2 py-0.5 rounded text-[#00FFC6] border border-slate-700/50">
                       {event.game}
                     </span>
                     <span className="text-[8px] font-bold tracking-wider text-slate-500 uppercase">
@@ -235,7 +235,7 @@ export default function UpcomingSchedule() {
                 <span className="text-xs font-medium text-slate-400">
                   Confirmed
                 </span>
-                <span className="text-lg font-black text-[#4ade80] font-mono">
+                <span className="text-lg font-black text-[#00FFC6] font-mono">
                   {String(totalConfirmed).padStart(2, "0")}
                 </span>
               </div>
@@ -251,13 +251,13 @@ export default function UpcomingSchedule() {
             <div className="pt-2">
               <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider mb-1.5">
                 <span className="text-slate-500">Approval Ratio</span>
-                <span className="text-[#4ade80]">
+                <span className="text-[#00FFC6]">
                   {totalScheduled > 0 ? Math.round((totalConfirmed / totalScheduled) * 100) : 0}%
                 </span>
               </div>
               <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden">
                 <div
-                  className="bg-[#4ade80] h-full rounded-full transition-all duration-300"
+                  className="bg-[#00FFC6] h-full rounded-full transition-all duration-300"
                   style={{ width: `${totalScheduled > 0 ? (totalConfirmed / totalScheduled) * 100 : 0}%` }}
                 />
               </div>
@@ -276,7 +276,7 @@ export default function UpcomingSchedule() {
               <h3 className="text-base font-black text-white uppercase tracking-wide leading-tight">
                 The Nexus Grand Open 2024
               </h3>
-              <span className="text-[9px] font-black text-[#4ade80] uppercase tracking-widest flex items-center gap-1">
+              <span className="text-[9px] font-black text-[#00FFC6] uppercase tracking-widest flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" /> System Announcement
               </span>
             </div>

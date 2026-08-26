@@ -356,7 +356,7 @@ export default function MatchTab({ activeTab }: { activeTab: string }) {
       </section>
 
       {/* Floating Global Fast Creation Plus Trigger Button */}
-      <button className="fixed bottom-6 right-6 bg-[#4ade80] text-[#07090d] p-3.5 rounded-xl shadow-xl shadow-emerald-500/20 hover:bg-[#3ec973] transition-all duration-200 group z-50">
+      <button className="fixed bottom-6 right-6 bg-[#00FFC6] text-[#07090d] p-3.5 rounded-xl shadow-xl shadow-emerald-500/20 hover:bg-[#00D9A8] transition-all duration-200 group z-50">
         <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" />
       </button>
 

@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar, Users, Trophy, Pencil, Trash2 } from "lucide-react";
+import { Plus, Calendar, Users, Trophy, Pencil, Trash2, ArrowRight } from "lucide-react";
 import { TournamentModal, Tournament } from "@/components/TournamentModal";
 import { Overview } from "@/components/TournamentOverview";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "react-router-dom";
+import { initialTournaments } from "@/data/tournaments";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,19 +31,27 @@ const ITEMS_PER_PAGE = 3;
 
 const Tournaments = () => {
   const { toast } = useToast();
-  const [tournaments, setTournaments] = useState<Tournament[]>([
-    { id: 1, name: "CODM Championship 2025", game: "Call of Duty Mobile", status: "Active", startDate: "2025-01-15", teams: 16, prize: "$10,000" },
-    { id: 2, name: "MLBB Spring League", game: "Mobile Legends", status: "Upcoming", startDate: "2025-01-20", teams: 24, prize: "$15,000" },
-    { id: 3, name: "Valorant Masters", game: "Valorant", status: "Completed", startDate: "2024-12-01", teams: 12, prize: "$8,000" },
-  ]);
+  const location = useLocation();
+  const [tournaments, setTournaments] = useState<Tournament[]>(initialTournaments);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [isViewingOverview, setIsViewingOverview] = useState(false); // Distinct page state flag
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tournamentToDelete, setTournamentToDelete] = useState<Tournament | null>(null);
-  const [filter, setFilter] = useState<"all" | "Active" | "Upcoming" | "Completed">("all");
+  const [filter, setFilter] = useState<"Active" | "Upcoming" | "Completed">("Active");
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    const tournamentId = (location.state as { tournamentId?: number } | null)?.tournamentId;
+    const tournament = tournaments.find((item) => item.id === tournamentId);
+
+    if (tournament) {
+      setSelectedTournament(tournament);
+      setIsViewingOverview(true);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, tournaments]);
 
   const handleCreateTournament = () => {
     setSelectedTournament(null);
@@ -107,7 +117,7 @@ const handleSaveTournament = (tournamentData: any) => {
   setModalOpen(false);
 };
 
-  const filteredTournaments = filter === "all" ? tournaments : tournaments.filter((t) => t.status === filter);
+  const filteredTournaments = tournaments.filter((t) => t.status === filter);
 
   const totalItemsCount = filteredTournaments.length;
   const totalPages = Math.ceil(totalItemsCount / ITEMS_PER_PAGE) || 1;
@@ -128,74 +138,104 @@ const handleSaveTournament = (tournamentData: any) => {
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-[1600px] mx-auto">
-      <div className="flex items-center justify-between">
+    <div className="p-5 md:p-8 lg:p-10 space-y-8 max-w-[1600px] mx-auto">
+      <div className="flex flex-col gap-6 border-b border-border pb-7 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-4xl font-bold text-foreground mb-2">Tournaments</h1>
-          <p className="text-muted-foreground">Manage and monitor all tournaments</p>
+          <p className="sca-eyebrow mb-3">Competition operations</p>
+          <h1 className="text-4xl font-semibold tracking-tight text-foreground mb-2">Tournament Management</h1>
+          <p className="text-muted-foreground">Track every competition from registration through final results.</p>
         </div>
-        <Button onClick={handleCreateTournament} className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+        <Button onClick={handleCreateTournament} className="h-11 rounded-sm bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90 gap-2">
           <Plus className="w-4 h-4" /> Create Tournament
         </Button>
       </div>
 
-      <div className="flex gap-2">
-        {(["all", "Active", "Upcoming", "Completed"] as const).map((tab) => (
-          <Button
+      <div className="flex flex-wrap gap-3">
+        {(["Active", "Upcoming", "Completed"] as const).map((tab) => {
+          const count = tournaments.filter((tournament) => tournament.status === tab).length;
+          return (
+          <button
+            type="button"
             key={tab}
-            variant={filter === tab ? "outline" : "ghost"}
             onClick={() => { setFilter(tab); setCurrentPage(1); }}
-            className={filter === tab ? "border-primary text-primary hover:bg-primary/10" : "text-muted-foreground hover:text-foreground"}
+            className={`flex min-w-36 items-center justify-between gap-5 rounded-sm border px-5 py-3 text-sm font-semibold transition-colors ${
+              filter === tab
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground"
+            }`}
           >
-            {tab === "all" ? "All Tournaments" : tab}
-          </Button>
-        ))}
+            {tab}
+            <span className={`flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-xs ${
+              filter === tab ? "bg-foreground/10" : "bg-secondary"
+            }`}>{count}</span>
+          </button>
+        )})}
       </div>
 
       {visibleTournaments.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="space-y-5">
           {visibleTournaments.map((tournament) => (
-            <Card key={tournament.id} className="p-6 bg-gradient-card border-border hover:border-primary transition-all duration-300 hover:shadow-glow">
-              <div className="flex items-start justify-between mb-4">
-                <Badge className={tournament.status === "Active" ? "bg-primary/20 text-primary border-primary" : tournament.status === "Upcoming" ? "bg-accent/20 text-accent border-accent" : "bg-muted text-muted-foreground border-muted"}>
-                  {tournament.status}
-                </Badge>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" onClick={() => handleEditTournament(tournament)} className="h-8 w-8 text-muted-foreground hover:text-primary">
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(tournament)} className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+            <Card key={tournament.id} className="group overflow-hidden rounded-sm border-border bg-card shadow-none transition-colors hover:border-primary/50">
+              <div className="grid md:grid-cols-[minmax(260px,38%)_1fr]">
+                <div className="relative min-h-56 overflow-hidden border-b border-border md:min-h-72 md:border-b-0 md:border-r">
+                  <img src="/arena.png" alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#07100e]/80 via-transparent to-transparent" />
+                  <Badge className="absolute left-5 top-5 rounded-sm border-0 bg-primary px-3 py-1.5 font-bold uppercase tracking-wider text-primary-foreground hover:bg-primary">
+                    {tournament.status}
+                  </Badge>
+                  <p className="absolute bottom-5 left-5 right-5 text-xs font-bold uppercase tracking-[0.16em] text-primary">
+                    {tournament.game}
+                  </p>
                 </div>
-              </div>
+                <div className="flex min-w-0 flex-col justify-between p-6 md:p-8">
+                  <div>
+                    <div className="mb-5 flex items-start justify-between gap-4">
+                      <div>
+                        <p className="sca-eyebrow mb-2">{tournament.game}</p>
+                        <h3 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">{tournament.name}</h3>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Button variant="ghost" size="icon" aria-label={`Edit ${tournament.name}`} onClick={() => handleEditTournament(tournament)} className="h-9 w-9 rounded-sm text-muted-foreground hover:bg-primary/10 hover:text-primary">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" aria-label={`Delete ${tournament.name}`} onClick={() => handleDeleteClick(tournament)} className="h-9 w-9 rounded-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
 
-              <h3 className="text-xl font-bold text-foreground mb-2">{tournament.name}</h3>
-              <p className="text-sm text-muted-foreground mb-4">{tournament.game}</p>
+                    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-border bg-border sm:grid-cols-3">
+                      <div className="bg-secondary p-4">
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Start date</p>
+                        <p className="flex items-center gap-2 text-sm font-semibold text-foreground"><Calendar className="w-4 h-4 text-primary" /> {new Date(`${tournament.startDate}T00:00:00`).toLocaleDateString()}</p>
+                      </div>
+                      <div className="bg-secondary p-4">
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{tournament.mode === "Team" ? "Teams" : "Players"}</p>
+                        <p className="flex items-center gap-2 text-sm font-semibold text-foreground"><Users className="w-4 h-4 text-primary" /> {tournament.teams}</p>
+                      </div>
+                      <div className="col-span-2 bg-secondary p-4 sm:col-span-1">
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Prize / entry</p>
+                        <p className="flex items-center gap-2 text-sm font-semibold text-foreground"><Trophy className="w-4 h-4 text-primary" /> {tournament.prize} · {tournament.entryType === "Paid" ? tournament.entryFee : "Free"}</p>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
+                  <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
+                    <Button onClick={() => handleViewDetails(tournament)} className="h-10 rounded-sm bg-primary px-5 font-bold text-primary-foreground hover:bg-primary/90">
+                      Manage Tournament <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground">Registration and competition controls</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{tournament.teams} Teams</span>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-border flex items-center justify-between">
-                <span className="text-lg font-bold text-accent">{tournament.prize}</span>
-                <Button variant="ghost" onClick={() => handleViewDetails(tournament)} className="text-primary hover:text-primary hover:bg-primary/10">
-                  View Details
-                </Button>
               </div>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 text-sm text-muted-foreground border border-dashed border-border rounded-xl">
-          No matching operational tournament entries registered.
+        <div className="flex min-h-64 flex-col items-center justify-center rounded-sm border border-dashed border-border bg-card text-center">
+          <Trophy className="mb-4 h-8 w-8 text-primary" />
+          <h3 className="font-semibold text-foreground">No {filter.toLowerCase()} tournaments</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Tournament records will appear here when their status changes.</p>
         </div>
       )}
 

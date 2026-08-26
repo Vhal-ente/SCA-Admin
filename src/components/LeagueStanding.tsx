@@ -125,7 +125,7 @@ export default function LeagueStandings({ activeTab }: { activeTab: string }) {
           </div>
           <div className="mt-6">
             <div className="w-full bg-[#1e293b]/50 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-[#00FFC6] h-full rounded-full shadow-[0_0_8px_#4ade80]" style={{ width: '75%' }}></div>
+              <div className="bg-[#00FFC6] h-full rounded-full shadow-[0_0_8px_#00FFC6]" style={{ width: '75%' }}></div>
             </div>
             <p className="text-[10px] text-gray-400 font-bold mt-2 uppercase tracking-wide">75% of Regular Season Complete</p>
           </div>

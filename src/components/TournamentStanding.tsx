@@ -1,68 +1,31 @@
-import { Trophy, Medal } from "lucide-react";
+import { useState } from "react";
+import { BarChart2, Brackets, LockKeyhole, Medal, ShieldX, Trophy } from "lucide-react";
+import type { StructureType } from "./TournamentMatch";
 
-export default function TournamentStandings({ activeTab }: { activeTab: string }) {
+type Props = { activeTab: string; mode: "Player" | "Team"; tournamentPhase: "Registration" | "Drafting" | "Finalized"; structureType: StructureType | null };
+
+const teamNames = ["Sentinels Alpha", "Fnatic Rising", "Natus Vincere", "T1 Academy"];
+const playerNames = ["ArcVance", "NovaCruz", "KoFury", "AvaStrike"];
+
+export default function TournamentStandings({ activeTab, mode, tournamentPhase, structureType }: Props) {
+  const [winnerName, setWinnerName] = useState("");
+  const [replacementName, setReplacementName] = useState("");
+  const [winnerNotice, setWinnerNotice] = useState("");
   if (activeTab !== "STANDINGS") return null;
+  const names = mode === "Team" ? teamNames : playerNames;
+  const participantLabel = mode === "Team" ? "Team" : "Player";
 
-  const leaderboard = [
-    { rank: 1, name: "Sentinels Alpha", played: 7, won: 6, lost: 1, points: 18, form: ["W", "W", "L", "W", "W"] },
-    { rank: 2, name: "Fnatic Rising", played: 7, won: 5, lost: 2, points: 15, form: ["W", "L", "W", "W", "W"] },
-    { rank: 3, name: "Natus Vincere", played: 7, won: 4, lost: 3, points: 12, form: ["L", "W", "W", "L", "L"] },
-    { rank: 4, name: "T1 Academy", played: 7, won: 2, lost: 5, points: 6, form: ["L", "L", "L", "W", "L"] },
-  ];
+  if (tournamentPhase !== "Finalized") return <div className="flex min-h-[28rem] flex-col items-center justify-center border border-dashed border-border bg-card px-6 text-center animate-in fade-in duration-200"><span className="flex h-14 w-14 items-center justify-center bg-amber-500/10 text-amber-500"><LockKeyhole className="h-7 w-7" /></span><p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-amber-500">Standings locked</p><h2 className="mt-2 text-2xl font-semibold text-foreground">Complete the drafting phase first</h2><p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">Standings become available after the final {mode.toLowerCase()} field is selected and the draft is finalized. Current phase: <strong className="text-foreground">{tournamentPhase}</strong>.</p></div>;
 
-  return (
-    <div className="bg-[#0f141c] border border-[#2a2e42] rounded-xl overflow-hidden max-w-5xl mx-auto shadow-2xl animate-in fade-in duration-200">
-      <div className="p-5 border-b border-[#2a2e42] flex items-center gap-2">
-        <Trophy className="w-5 h-5 text-[#00FFC6]" />
-        <h3 className="font-bold text-lg text-white">Championship Standings</h3>
-      </div>
+  if (!structureType) return <div className="flex min-h-[28rem] flex-col items-center justify-center border border-dashed border-border bg-card px-6 text-center"><BarChart2 className="h-8 w-8 text-primary" /><h2 className="mt-4 text-xl font-semibold">No standings structure</h2><p className="mt-2 text-sm text-muted-foreground">Generate a tournament structure before standings can be displayed.</p></div>;
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-[#141923] border-b border-[#2a2e42] text-[11px] font-bold tracking-wider text-slate-400 uppercase">
-              <th className="py-3 px-5 text-center w-16">Rank</th>
-              <th className="py-3 px-4">Team</th>
-              <th className="py-3 px-4 text-center">Played</th>
-              <th className="py-3 px-4 text-center text-emerald-400">W</th>
-              <th className="py-3 px-4 text-center text-rose-400">L</th>
-              <th className="py-3 px-4 text-center text-white">PTS</th>
-              <th className="py-3 px-5 text-center hidden sm:table-cell">Recent Form</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#2a2e42]/50 text-sm font-medium">
-            {leaderboard.map((row) => (
-              <tr key={row.rank} className="hover:bg-[#1b212f]/40 transition-colors">
-                <td className="py-4 px-5 text-center">
-                  {row.rank <= 2 ? (
-                    <div className="flex justify-center">
-                      <Medal className={`w-5 h-5 ${row.rank === 1 ? "text-amber-400" : "text-slate-300"}`} />
-                    </div>
-                  ) : (
-                    <span className="font-mono text-slate-400">{row.rank}</span>
-                  )}
-                </td>
-                <td className="py-4 px-4 font-bold text-white">{row.name}</td>
-                <td className="py-4 px-4 text-center text-slate-300 font-mono">{row.played}</td>
-                <td className="py-4 px-4 text-center text-emerald-400/90 font-mono">{row.won}</td>
-                <td className="py-4 px-4 text-center text-rose-400/90 font-mono">{row.lost}</td>
-                <td className="py-4 px-4 text-center text-[#00FFC6] font-black font-mono text-base">{row.points}</td>
-                <td className="py-4 px-5 hidden sm:table-cell">
-                  <div className="flex gap-1 justify-center">
-                    {row.form.map((res, idx) => (
-                      <span key={idx} className={`w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center ${
-                        res === "W" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                      }`}>
-                        {res}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
+  const isLeague = structureType === "Round robin" || structureType === "Swiss";
+  const isLobby = structureType === "Single lobby" || structureType === "Multiple lobbies";
+  const currentWinner = winnerName || names[0];
+  const winnerControl = <section className="border border-border bg-card"><div className="flex flex-col gap-4 border-b border-border p-5 md:flex-row md:items-center md:justify-between"><div><p className="sca-eyebrow mb-1">Result governance</p><h3 className="text-xl font-semibold">Winner assignment</h3><p className="mt-1 text-sm text-muted-foreground">Correct the final winner for this {mode.toLowerCase()} competition before settlement.</p></div><span className="border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-bold text-primary">Current winner · {currentWinner}</span></div><div className="grid gap-4 p-5 lg:grid-cols-[1fr_auto_auto]"><input value={replacementName} onChange={event => setReplacementName(event.target.value)} placeholder={`Select replacement ${mode.toLowerCase()} winner`} className="h-12 border border-input bg-background px-4 text-sm outline-none focus:border-primary"/><button onClick={() => { if (!replacementName.trim()) return; setWinnerName(replacementName.trim()); setWinnerNotice(`${replacementName.trim()} is now the winner. Finance settlement records should be reviewed.`); setReplacementName(""); }} className="h-12 bg-primary px-5 text-xs font-bold uppercase text-primary-foreground">Change winner</button><button onClick={() => setWinnerNotice(`${currentWinner} was disqualified. Select a replacement winner.`)} className="inline-flex h-12 items-center justify-center gap-2 border border-destructive/40 px-5 text-xs font-bold uppercase text-destructive"><ShieldX className="h-4 w-4"/> Disqualify</button></div>{winnerNotice && <p className="border-t border-primary/20 bg-primary/5 px-5 py-3 text-sm text-primary">{winnerNotice}</p>}</section>;
+
+  if (!isLeague && !isLobby) return <div className="space-y-6 animate-in fade-in duration-200">{winnerControl}<div><p className="sca-eyebrow mb-2">Bracket progression</p><h2 className="text-2xl font-semibold tracking-tight">Elimination standings</h2><p className="mt-1 text-sm text-muted-foreground">Placement is determined by progression through the {structureType.toLowerCase()} bracket.</p></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{names.map((name, index) => <div key={name} className={`border bg-card p-5 ${index === 0 ? "border-primary" : "border-border"}`}><div className="flex items-start justify-between"><span className={`flex h-11 w-11 items-center justify-center ${index === 0 ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}>{index < 2 ? <Medal className="h-5 w-5" /> : <Brackets className="h-5 w-5" />}</span><span className="text-2xl font-semibold text-foreground">#{index + 1}</span></div><p className="mt-6 text-[10px] font-bold uppercase tracking-widest text-primary">{index === 0 ? "Champion" : index === 1 ? "Runner-up" : "Semifinalist"}</p><h3 className="mt-1 text-lg font-semibold text-foreground">{name}</h3><p className="mt-3 text-xs text-muted-foreground">Results will update as bracket fixtures are completed.</p></div>)}</div></div>;
+
+  const rows = names.map((name, index) => ({ rank: index + 1, name, played: isLobby ? 3 : 0, won: 0, drawn: 0, lost: 0, placement: isLobby ? 12 - index * 2 : 0, eliminations: isLobby ? 8 - index : 0, points: isLobby ? 24 - index * 5 : 0 }));
+  return <div className="space-y-6 animate-in fade-in duration-200">{winnerControl}<div className="overflow-hidden border border-border bg-card"><div className="flex items-center gap-3 border-b border-border p-5"><Trophy className="h-5 w-5 text-primary" /><div><p className="sca-eyebrow mb-1">{isLobby ? "Lobby leaderboard" : structureType === "Swiss" ? "Swiss table" : "League table"}</p><h3 className="text-xl font-semibold text-foreground">{structureType} standings</h3><p className="mt-1 text-xs text-muted-foreground">Ranked {mode.toLowerCase()} results update from completed fixtures.</p></div></div><div className="overflow-x-auto"><table className="w-full border-collapse text-left"><thead><tr className="border-b border-border bg-secondary text-[11px] font-bold uppercase tracking-wider text-muted-foreground"><th className="w-20 px-5 py-3 text-center">Rank</th><th className="px-4 py-3">{participantLabel}</th><th className="px-4 py-3 text-center">Played</th>{isLobby ? <><th className="px-4 py-3 text-center">Placement</th><th className="px-4 py-3 text-center">Eliminations</th></> : <><th className="px-4 py-3 text-center text-emerald-400">W</th><th className="px-4 py-3 text-center">D</th><th className="px-4 py-3 text-center text-rose-400">L</th></>}<th className="px-5 py-3 text-center text-foreground">PTS</th></tr></thead><tbody className="divide-y divide-border text-sm">{rows.map(row => <tr key={row.name} className="transition-colors hover:bg-secondary/50"><td className="px-5 py-4 text-center">{row.rank <= 2 ? <Medal className={`mx-auto h-5 w-5 ${row.rank === 1 ? "text-amber-400" : "text-slate-300"}`} /> : <span className="font-mono text-muted-foreground">{row.rank}</span>}</td><td className="px-4 py-4 font-bold text-foreground">{row.name}</td><td className="px-4 py-4 text-center font-mono text-muted-foreground">{row.played}</td>{isLobby ? <><td className="px-4 py-4 text-center font-mono text-muted-foreground">{row.placement}</td><td className="px-4 py-4 text-center font-mono text-primary">{row.eliminations}</td></> : <><td className="px-4 py-4 text-center font-mono text-emerald-400">{row.won}</td><td className="px-4 py-4 text-center font-mono text-muted-foreground">{row.drawn}</td><td className="px-4 py-4 text-center font-mono text-rose-400">{row.lost}</td></>}<td className="px-5 py-4 text-center font-mono text-base font-black text-primary">{row.points}</td></tr>)}</tbody></table></div></div></div>;
 }
