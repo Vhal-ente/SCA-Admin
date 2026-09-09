@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,8 @@ import { TournamentModal, Tournament } from "@/components/TournamentModal";
 import { Overview } from "@/components/TournamentOverview";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
-import { initialTournaments } from "@/data/tournaments";
+import { api, type ApiTournament } from "@/lib/api";
+import { toTournamentPayload, toUiTournament } from "@/lib/competitions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +33,20 @@ const ITEMS_PER_PAGE = 3;
 const Tournaments = () => {
   const { toast } = useToast();
   const location = useLocation();
-  const [tournaments, setTournaments] = useState<Tournament[]>(initialTournaments);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loadError, setLoadError] = useState("");
+
+  const loadTournaments = useCallback(async () => {
+    try {
+      const { tournaments: data } = await api.get<{ tournaments: ApiTournament[] }>("/admin/tournaments");
+      setTournaments(data.map(toUiTournament));
+      setLoadError("");
+    } catch (error) {
+      setLoadError((error as Error).message);
+    }
+  }, []);
+
+  useEffect(() => { loadTournaments(); }, [loadTournaments]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
@@ -78,43 +92,48 @@ const Tournaments = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (tournamentToDelete) {
-      setTournaments(tournaments.filter((t) => t.id !== tournamentToDelete.id));
-      toast({ title: "Tournament Deleted", description: `${tournamentToDelete.name} has been deleted.` });
+      try {
+        await api.delete(`/admin/tournaments/${tournamentToDelete.id}`);
+        await loadTournaments();
+        toast({ title: "Tournament Deleted", description: `${tournamentToDelete.name} has been deleted.` });
+      } catch (error) {
+        toast({ title: "Could not delete", description: (error as Error).message, variant: "destructive" });
+      }
       setTournamentToDelete(null);
       setCurrentPage(1);
     }
     setDeleteDialogOpen(false);
   };
 
- // Update the parameter type to allow either a Tournament rewrite sequence or a League object
-const handleSaveTournament = (tournamentData: any) => {
-  if (tournamentData.id) {
-    setTournaments(
-      tournaments.map((t) =>
-        t.id === tournamentData.id 
-          ? { 
-              ...t, 
-              ...tournamentData, 
-              // Ensure startDate is always string-defined to appease the Tournament type compiler
-              startDate: tournamentData.startDate || t.startDate 
-            } as Tournament 
-          : t
-      )
-    );
-    toast({ title: "Updated successfully" });
-  } else {
-    // Fallback instantiation mechanics for creating new records
-    const newTournament: Tournament = {
-      ...tournamentData,
-      startDate: tournamentData.startDate || new Date().toISOString().split('T')[0],
-      id: Math.max(...tournaments.map((t) => t.id), 0) + 1,
-    } as Tournament;
-    setTournaments([...tournaments, newTournament]);
-    toast({ title: "Created successfully" });
+const handleSaveTournament = async (tournamentData: Partial<Tournament> & { id?: string }) => {
+  const payload = toTournamentPayload(tournamentData);
+  try {
+    if (tournamentData.id) {
+      await api.patch(`/admin/tournaments/${tournamentData.id}`, payload);
+      toast({ title: "Updated successfully" });
+    } else {
+      await api.post("/admin/tournaments", payload);
+      toast({ title: "Created successfully" });
+    }
+    await loadTournaments();
+    setModalOpen(false);
+  } catch (error) {
+    toast({ title: "Could not save", description: (error as Error).message, variant: "destructive" });
   }
-  setModalOpen(false);
+};
+
+// Publishing is what makes a competition visible on the public site.
+const togglePublication = async (tournament: Tournament) => {
+  const next = tournament.publicationStatus === "Published" ? "draft" : "published";
+  try {
+    await api.patch(`/admin/tournaments/${tournament.id}`, { publicationStatus: next });
+    await loadTournaments();
+    toast({ title: next === "published" ? "Published to the site" : "Hidden from the site" });
+  } catch (error) {
+    toast({ title: "Could not update", description: (error as Error).message, variant: "destructive" });
+  }
 };
 
   const filteredTournaments = tournaments.filter((t) => t.status === filter);
@@ -172,6 +191,12 @@ const handleSaveTournament = (tournamentData: any) => {
         )})}
       </div>
 
+      {loadError && (
+        <p role="alert" className="mb-5 rounded-sm border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+          {loadError}
+        </p>
+      )}
+
       {visibleTournaments.length > 0 ? (
         <div className="space-y-5">
           {visibleTournaments.map((tournament) => (
@@ -182,6 +207,9 @@ const handleSaveTournament = (tournamentData: any) => {
                   <div className="absolute inset-0 bg-gradient-to-t from-[#07100e]/80 via-transparent to-transparent" />
                   <Badge className="absolute left-5 top-5 rounded-sm border-0 bg-primary px-3 py-1.5 font-bold uppercase tracking-wider text-primary-foreground hover:bg-primary">
                     {tournament.status}
+                  </Badge>
+                  <Badge className={`absolute right-5 top-5 rounded-sm border-0 px-3 py-1.5 font-bold uppercase tracking-wider ${tournament.publicationStatus === "Published" ? "bg-emerald-500 text-black hover:bg-emerald-500" : "bg-slate-700 text-slate-200 hover:bg-slate-700"}`}>
+                    {tournament.publicationStatus === "Published" ? "Live on site" : "Draft"}
                   </Badge>
                   <p className="absolute bottom-5 left-5 right-5 text-xs font-bold uppercase tracking-[0.16em] text-primary">
                     {tournament.game}
@@ -195,6 +223,9 @@ const handleSaveTournament = (tournamentData: any) => {
                         <h3 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">{tournament.name}</h3>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
+                        <Button variant="outline" size="sm" onClick={() => togglePublication(tournament)} className="h-9 rounded-sm text-xs font-bold uppercase tracking-wider">
+                          {tournament.publicationStatus === "Published" ? "Unpublish" : "Publish"}
+                        </Button>
                         <Button variant="ghost" size="icon" aria-label={`Edit ${tournament.name}`} onClick={() => handleEditTournament(tournament)} className="h-9 w-9 rounded-sm text-muted-foreground hover:bg-primary/10 hover:text-primary">
                           <Pencil className="w-4 h-4" />
                         </Button>

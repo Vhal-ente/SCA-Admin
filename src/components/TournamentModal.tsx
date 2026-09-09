@@ -18,7 +18,7 @@ import {
 import { CalendarDays, Gamepad2, Trophy, User, Users } from "lucide-react";
 
 export interface Tournament {
-  id: number;
+  id: string;
   name: string;
   game: string;
   status: "Active" | "Upcoming" | "Completed";
@@ -38,7 +38,7 @@ interface TournamentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tournament?: Tournament | null;
-  onSave: (tournament: Omit<Tournament, "id"> & { id?: number }) => void;
+  onSave: (tournament: Omit<Tournament, "id"> & { id?: string }) => void;
 }
 
 export const TournamentModal = ({
