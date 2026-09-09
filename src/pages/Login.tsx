@@ -1,5 +1,6 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,15 +10,34 @@ import SCA from "../../public/sca_white.png";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, isStaff, loading } = useAuth();
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [submitting, setSubmitting] = React.useState(false);
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const destination = (location.state as { from?: { pathname: string } } | null)?.from?.pathname || "/";
+  React.useEffect(() => {
+    if (!loading && isStaff) navigate(destination, { replace: true });
+  }, [loading, isStaff, navigate, destination]);
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    navigate("/");
-    console.log("Logging in...");
-  };
-
-    const onNavigateToSignup = () => {
-    navigate("/signup");
+    if (!email.trim() || !password) {
+      setError("Enter your staff email address and password.");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    try {
+      await login(email.trim(), password);
+      navigate(destination, { replace: true });
+    } catch (loginError) {
+      setError((loginError as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -68,7 +88,7 @@ export default function LoginPage() {
                   <Label className="text-slate-500 uppercase tracking-wider text-[9px] font-black">Email Address</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
-                    <Input type="email" placeholder="commander@void.io" className="bg-[#07090d] border border-[#1e293b]/60 rounded-xl pl-9 text-xs text-white placeholder-slate-700 h-10 focus-visible:ring-0 focus-visible:border-[#00FFC6]/40 transition-colors" required />
+                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" placeholder="staff@sca.gg" className="bg-[#07090d] border border-[#1e293b]/60 rounded-xl pl-9 text-xs text-white placeholder-slate-700 h-10 focus-visible:ring-0 focus-visible:border-[#00FFC6]/40 transition-colors" required />
                   </div>
                 </div>
 
@@ -79,7 +99,7 @@ export default function LoginPage() {
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-600" />
-                    <Input type="password" placeholder="••••••••••••" className="bg-[#07090d] border border-[#1e293b]/60 rounded-xl pl-9 text-xs text-white placeholder-slate-700 h-10 focus-visible:ring-0 focus-visible:border-[#00FFC6]/40 transition-colors" required />
+                    <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" placeholder="••••••••••••" className="bg-[#07090d] border border-[#1e293b]/60 rounded-xl pl-9 text-xs text-white placeholder-slate-700 h-10 focus-visible:ring-0 focus-visible:border-[#00FFC6]/40 transition-colors" required />
                   </div>
                    <div className="flex items-center space-y-2 right-0 justify-end">
                     <a href="#reset" className="text-[9px] text-[#00FFC6] hover:underline font-black uppercase tracking-wider">Forgot Key?</a>
@@ -87,15 +107,19 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-[#00FFC6] hover:bg-[#00D9A8] text-[#07090d] font-black text-xs uppercase tracking-widest h-10 rounded-xl shadow-lg shadow-emerald-500/10 transition-all transform active:scale-[0.99]">
-                Establish Connection
+              {error && (
+                <p role="alert" className="text-[10px] font-black uppercase tracking-wider text-red-400 border border-red-500/30 bg-red-500/5 rounded-xl px-3 py-2">
+                  {error}
+                </p>
+              )}
+
+              <Button type="submit" disabled={submitting} className="w-full bg-[#00FFC6] hover:bg-[#00D9A8] text-[#07090d] font-black text-xs uppercase tracking-widest h-10 rounded-xl shadow-lg shadow-emerald-500/10 transition-all transform active:scale-[0.99] disabled:opacity-60">
+                {submitting ? "Connecting…" : "Establish Connection"}
               </Button>
 
               <p className="text-center text-[10px] text-slate-500 font-bold">
-                New to the void?{" "}
-                <button type="button" onClick={onNavigateToSignup} className="text-[#00FFC6] hover:underline font-black ml-0.5">
-                  Join the fleet
-                </button>
+                Staff accounts are issued by an administrator. Sign up on the main
+                site, then ask an admin to grant you access.
               </p>
             </form>
           </div>
