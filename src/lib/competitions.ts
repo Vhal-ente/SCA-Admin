@@ -1,4 +1,4 @@
-import type { ApiTournament, ApiLeague } from "@/lib/api";
+import type { ApiTournament, ApiLeague, ApiWorkspace, WatchLinks } from "@/lib/api";
 import type { Tournament } from "@/components/TournamentModal";
 import type { League } from "@/interfaces/league-modal";
 
@@ -42,6 +42,33 @@ const naira = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN
 // An entry fee arrives from the form as free text ("₦10,000", "10000").
 const feeToAmount = (value?: string) => (value || "").replace(/[^\d.]/g, "") || "0";
 
+// <input type="datetime-local"> holds a zoneless local time ("2026-10-01T18:00");
+// the API stores UTC.
+const toLocalInput = (iso: string) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
+const fromLocalInput = (value?: string) => (value ? new Date(value).toISOString() : "");
+
+export const emptyWatchLinks = (): WatchLinks => ({ youtube: "", twitch: "", replays: [] });
+
+// The workspace fields tournaments and leagues share.
+const toUiWorkspace = (item: ApiWorkspace) => ({
+  registrationOpensAt: toLocalInput(item.registrationOpensAt),
+  registrationClosesAt: toLocalInput(item.registrationClosesAt),
+  // An unset split falls back to the workspace default.
+  prizeAllocations: item.prizeAllocations?.length ? item.prizeAllocations : undefined,
+  watchLinks: item.watchLinks || emptyWatchLinks(),
+});
+
+// An empty date is sent as "" so clearing it in the workspace clears it on the server.
+const toWorkspacePayload = (item: { registrationOpensAt?: string; registrationClosesAt?: string; prizeAllocations?: number[] }) => ({
+  registrationOpensAt: fromLocalInput(item.registrationOpensAt),
+  registrationClosesAt: fromLocalInput(item.registrationClosesAt),
+  prizeAllocations: item.prizeAllocations,
+});
+
 export const toUiTournament = (item: ApiTournament): Tournament => {
   const { status, registration } = fromApiStatus(item.status);
   return {
@@ -60,6 +87,7 @@ export const toUiTournament = (item: ApiTournament): Tournament => {
     bannerUrl: item.bannerUrl,
     publicationStatus: item.publicationStatus === "published" ? "Published" : "Draft",
     phase: (item.phase as Tournament["phase"]) || "Registration",
+    ...toUiWorkspace(item),
   };
 };
 
@@ -75,6 +103,7 @@ export const toTournamentPayload = (item: Partial<Tournament>) => ({
   phase: item.phase,
   status: changedStatus(item.apiStatus, toApiStatus(item.status, item.registrationStatus, "live")),
   publicationStatus: item.publicationStatus === "Published" ? "published" : "draft",
+  ...toWorkspacePayload(item),
 });
 
 export const toUiLeague = (item: ApiLeague): League => {
@@ -99,6 +128,7 @@ export const toUiLeague = (item: ApiLeague): League => {
     entryFee: item.entryFee > 0 ? naira.format(item.entryFee) : "",
     bannerUrl: item.bannerUrl,
     publicationStatus: item.publicationStatus === "published" ? "Published" : "Draft",
+    ...toUiWorkspace(item),
   };
 };
 
@@ -112,4 +142,5 @@ export const toLeaguePayload = (item: Partial<League>) => ({
   bannerUrl: item.bannerUrl,
   status: changedStatus(item.apiStatus, toApiStatus(item.status, item.registrationStatus, "active")),
   publicationStatus: item.publicationStatus === "Published" ? "published" : "draft",
+  ...toWorkspacePayload(item),
 });

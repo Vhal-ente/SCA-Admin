@@ -3,7 +3,7 @@ import { CalendarDays, ChevronRight, Pencil, Plus, Trash2, Trophy, Users } from 
 import { Overview } from "@/components/TournamentOverview";
 import type { League } from "@/interfaces/league-modal";
 import { useToast } from "@/hooks/use-toast";
-import { api, type ApiLeague } from "@/lib/api";
+import { api, type ApiLeague, type WatchLinks } from "@/lib/api";
 import { toLeaguePayload, toUiLeague } from "@/lib/competitions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -55,9 +55,17 @@ export default function LeaguePage() {
       toast({ title: data.publicationStatus === "Published" ? "League published" : "League draft saved", description: `${data.name || "Untitled league"} was updated successfully.` });
       setSelectedLeague(null);
       await loadLeagues();
+      return true;
     } catch (error) {
       toast({ title: "Could not save league", description: (error as Error).message, variant: "destructive" });
+      return false;
     }
+  };
+
+  const saveWatchLinks = async (links: WatchLinks) => {
+    if (!selectedLeague?.id) return;
+    await api.patch(`/admin/leagues/${selectedLeague.id}`, { watchLinks: links });
+    await loadLeagues();
   };
 
   // Publishing is what makes a league visible on the public site.
@@ -85,7 +93,7 @@ export default function LeaguePage() {
   };
 
   if (selectedLeague) {
-    return <Overview tournament={selectedLeague} onSave={saveLeague} onBack={() => setSelectedLeague(null)} entityType="League" />;
+    return <Overview tournament={selectedLeague} onSave={saveLeague} onSaveWatchLinks={saveWatchLinks} onBack={() => setSelectedLeague(null)} entityType="League" />;
   }
 
   return (

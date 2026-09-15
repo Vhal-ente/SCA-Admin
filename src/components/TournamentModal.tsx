@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CalendarDays, Gamepad2, Trophy, User, Users } from "lucide-react";
+import type { WatchLinks } from "@/lib/api";
 
 export interface Tournament {
   id: string;
@@ -33,6 +34,9 @@ export interface Tournament {
   publicationStatus?: "Draft" | "Published";
   phase?: "Registration" | "Drafting" | "Finalized";
   registrationStatus?: "Scheduled" | "Open" | "Closed";
+  registrationOpensAt?: string;
+  registrationClosesAt?: string;
+  watchLinks?: WatchLinks;
   // The API's own status, kept so a save only sends a status the console changed.
   apiStatus?: string;
 }

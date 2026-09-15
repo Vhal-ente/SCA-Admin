@@ -1,3 +1,5 @@
+import type { WatchLinks } from "@/lib/api";
+
 export interface League {
   id?: string;
   name: string;
@@ -18,6 +20,7 @@ export interface League {
   registrationStatus?: "Scheduled" | "Open" | "Closed";
   registrationOpensAt?: string;
   registrationClosesAt?: string;
+  watchLinks?: WatchLinks;
   // The API's own status, kept so a save only sends a status the console changed.
   apiStatus?: string;
 }

@@ -62,7 +62,7 @@ export type ApiTournament = {
   status: string;
   phase: string;
   publicationStatus: string;
-};
+} & ApiWorkspace;
 
 export type ApiLeague = {
   id: string;
@@ -80,4 +80,18 @@ export type ApiLeague = {
   startsAt: string;
   status: string;
   publicationStatus: string;
+} & ApiWorkspace;
+
+export type WatchLinks = {
+  youtube: string;
+  twitch: string;
+  replays: { title: string; url: string }[];
+};
+
+// Fields tournaments and leagues share in the console's competition workspace.
+export type ApiWorkspace = {
+  registrationOpensAt: string;
+  registrationClosesAt: string;
+  prizeAllocations: number[];
+  watchLinks: WatchLinks;
 };
