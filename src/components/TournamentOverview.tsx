@@ -516,7 +516,19 @@ export const Overview = ({
       )}
 
       {/* --- RELATIONAL ROUTED TAB MODULE SUB-VIEWS --- */}
-      {activeTab === "PARTICIPANTS" && <TeamsTab activeTab={activeTab} mode={mode} entryType={tournament?.entryType || "Free"} entryFee={tournament?.entryFee || ""} playerPhase={tournamentPhase} setPlayerPhase={setTournamentPhase} />}
+      {activeTab === "PARTICIPANTS" && (
+        <TeamsTab
+          activeTab={activeTab}
+          entityType={entityType}
+          competitionId={tournament?.id}
+          capacity={tournament?.teams}
+          mode={mode}
+          entryType={tournament?.entryType || "Free"}
+          entryFee={tournament?.entryFee || ""}
+          playerPhase={tournamentPhase}
+          setPlayerPhase={setTournamentPhase}
+        />
+      )}
       {activeTab === "WATCH" && (
         <WatchTab
           activeTab={activeTab}

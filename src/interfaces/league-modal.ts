@@ -25,10 +25,3 @@ export interface League {
   apiStatus?: string;
 }
 
-export interface LeagueModalProps {
-  // onOpenChange: (open: boolean) => void;
-  league: League | null;
-  onSave: (data: League) => void;
-  onBack: () => void;
-}
-
