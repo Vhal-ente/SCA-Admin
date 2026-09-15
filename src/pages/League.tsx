@@ -1,28 +1,40 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, ChevronRight, Pencil, Plus, Trash2, Trophy, Users } from "lucide-react";
 import { Overview } from "@/components/TournamentOverview";
 import type { League } from "@/interfaces/league-modal";
 import { useToast } from "@/hooks/use-toast";
+import { api, type ApiLeague } from "@/lib/api";
+import { toLeaguePayload, toUiLeague } from "@/lib/competitions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-const initialLeagues: League[] = [
-  { id: 1, name: "CODM Pro League", game: "Call of Duty Mobile", status: "Active", season: "Season 2", isSeasonal: true, seasonNumber: 2, teams: 12, prize: "$25,000", mode: "Team", publicationStatus: "Published", phase: "Drafting", entryType: "Paid", entryFee: "10000", prizeAllocations: [50, 30, 20] },
-  { id: 2, name: "MLBB Masters League", game: "Mobile Legends", status: "Upcoming", season: "Season 1", isSeasonal: true, seasonNumber: 1, teams: 16, prize: "$30,000", mode: "Team", publicationStatus: "Draft", phase: "Registration", entryType: "Free", prizeAllocations: [60, 25, 15] },
-  { id: 3, name: "Valorant Champions League", game: "Valorant", status: "Completed", season: "", isSeasonal: false, teams: 10, prize: "$50,000", mode: "Team", publicationStatus: "Published", phase: "Finalized", entryType: "Free", prizeAllocations: [50, 25, 15, 10] },
-];
 
 const filters = ["All", "Active", "Upcoming", "Completed"] as const;
 type Filter = typeof filters[number];
 
 export default function LeaguePage() {
   const { toast } = useToast();
-  const [leagues, setLeagues] = useState<League[]>(initialLeagues);
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
   const [leagueToDelete, setLeagueToDelete] = useState<League | null>(null);
   const [filter, setFilter] = useState<Filter>("All");
+
+  const loadLeagues = useCallback(async () => {
+    try {
+      const { leagues: data } = await api.get<{ leagues: ApiLeague[] }>("/admin/leagues");
+      setLeagues(data.map(toUiLeague));
+      setLoadError("");
+    } catch (error) {
+      setLoadError((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { loadLeagues(); }, [loadLeagues]);
 
   const filteredLeagues = useMemo(
     () => filter === "All" ? leagues : leagues.filter((league) => league.status === filter),
@@ -35,18 +47,40 @@ export default function LeaguePage() {
     prizeAllocations: [60, 25, 15],
   });
 
-  const saveLeague = (data: League) => {
-    const teamLeague = { ...data, mode: "Team" as const };
-    if (data.id) setLeagues((current) => current.map((league) => league.id === data.id ? { ...league, ...teamLeague } : league));
-    else setLeagues((current) => [...current, { ...teamLeague, id: Date.now() }]);
-    toast({ title: data.publicationStatus === "Published" ? "League published" : "League draft saved", description: `${data.name || "Untitled league"} was updated successfully.` });
-    setSelectedLeague(null);
+  const saveLeague = async (data: League) => {
+    const payload = toLeaguePayload(data);
+    try {
+      if (data.id) await api.patch(`/admin/leagues/${data.id}`, payload);
+      else await api.post("/admin/leagues", payload);
+      toast({ title: data.publicationStatus === "Published" ? "League published" : "League draft saved", description: `${data.name || "Untitled league"} was updated successfully.` });
+      setSelectedLeague(null);
+      await loadLeagues();
+    } catch (error) {
+      toast({ title: "Could not save league", description: (error as Error).message, variant: "destructive" });
+    }
   };
 
-  const deleteLeague = () => {
+  // Publishing is what makes a league visible on the public site.
+  const togglePublication = async (league: League) => {
+    const next = league.publicationStatus === "Published" ? "draft" : "published";
+    try {
+      await api.patch(`/admin/leagues/${league.id}`, { publicationStatus: next });
+      await loadLeagues();
+      toast({ title: next === "published" ? "Published to the site" : "Hidden from the site", description: league.name });
+    } catch (error) {
+      toast({ title: "Could not update league", description: (error as Error).message, variant: "destructive" });
+    }
+  };
+
+  const deleteLeague = async () => {
     if (!leagueToDelete?.id) return;
-    setLeagues((current) => current.filter((league) => league.id !== leagueToDelete.id));
-    toast({ title: "League deleted", description: `${leagueToDelete.name} was removed.` });
+    try {
+      await api.delete(`/admin/leagues/${leagueToDelete.id}`);
+      toast({ title: "League deleted", description: `${leagueToDelete.name} was removed.` });
+      await loadLeagues();
+    } catch (error) {
+      toast({ title: "Could not delete league", description: (error as Error).message, variant: "destructive" });
+    }
     setLeagueToDelete(null);
   };
 
@@ -76,7 +110,15 @@ export default function LeaguePage() {
           ))}
         </div>
 
-        {filteredLeagues.length ? (
+        {loadError && (
+          <p role="alert" className="mb-5 rounded-sm border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">
+            {loadError}
+          </p>
+        )}
+
+        {loading ? (
+          <p className="py-20 text-center text-sm text-muted-foreground">Loading leagues…</p>
+        ) : filteredLeagues.length ? (
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
             {filteredLeagues.map((league) => (
               <article key={league.id} className="group flex min-h-[360px] flex-col border border-border bg-card p-6 transition-colors hover:border-primary/45 md:p-7">
@@ -86,6 +128,7 @@ export default function LeaguePage() {
                     <span className={`border px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] ${league.publicationStatus === "Published" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500" : "border-amber-500/30 bg-amber-500/10 text-amber-500"}`}>{league.publicationStatus === "Published" ? "Live" : "Draft"}</span>
                   </div>
                   <div className="flex gap-1">
+                    <button onClick={() => togglePublication(league)} className="border border-border px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground hover:border-primary/50 hover:text-primary">{league.publicationStatus === "Published" ? "Unpublish" : "Publish"}</button>
                     <button aria-label={`Edit ${league.name}`} onClick={() => setSelectedLeague(league)} className="border border-border p-2 text-muted-foreground hover:border-primary/50 hover:text-primary"><Pencil className="h-4 w-4" /></button>
                     <button aria-label={`Delete ${league.name}`} onClick={() => setLeagueToDelete(league)} className="border border-border p-2 text-muted-foreground hover:border-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
                   </div>
@@ -116,7 +159,7 @@ export default function LeaguePage() {
 
       <AlertDialog open={Boolean(leagueToDelete)} onOpenChange={(open) => !open && setLeagueToDelete(null)}>
         <AlertDialogContent className="rounded-sm border-border bg-card text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Delete league?</AlertDialogTitle><AlertDialogDescription>This permanently removes {leagueToDelete?.name} and its local management data.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete league?</AlertDialogTitle><AlertDialogDescription>This removes {leagueToDelete?.name} from the console and the public site.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel className="rounded-sm">Cancel</AlertDialogCancel><AlertDialogAction onClick={deleteLeague} className="rounded-sm bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete league</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

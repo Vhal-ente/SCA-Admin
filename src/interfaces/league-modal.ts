@@ -1,5 +1,5 @@
 export interface League {
-  id?: number;
+  id?: string;
   name: string;
   game: string;
   status: "Active" | "Upcoming" | "Completed";
@@ -18,6 +18,8 @@ export interface League {
   registrationStatus?: "Scheduled" | "Open" | "Closed";
   registrationOpensAt?: string;
   registrationClosesAt?: string;
+  // The API's own status, kept so a save only sends a status the console changed.
+  apiStatus?: string;
 }
 
 export interface LeagueModalProps {

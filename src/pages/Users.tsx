@@ -1,25 +1,20 @@
 import { useState } from "react";
-import { 
-  Plus, 
-  MoreVertical, 
-  Shield, 
-  Ban, 
-  Edit, 
+import {
+  Plus,
+  MoreVertical,
+  Shield,
+  Edit,
   Trash2,
   Search,
-  Filter,
-  TrendingUp,
-  Swords,
-  Ticket
+  Filter
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,9 +30,9 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import UserActionModals from "@/components/modals/UserActionModals";
-import { PLATFORM_PLAYERS } from "@/data/platformPlayers";
+import { PlayerDirectory } from "@/components/PlayerDirectory";
 
-type ModalType = "add-player" | "edit-player" | "add-admin" | "edit-team" | "delete" | null;
+type ModalType = "edit-player" | "add-admin" | "edit-team" | "delete" | null;
 
 // Mock Datasets with matching interface structures
 const INITIAL_TEAMS = [
@@ -72,10 +67,6 @@ const Users = () => {
   const [reportReplies, setReportReplies] = useState<Record<string, string>>({});
 
   // Filter and Pagination Tracking hooks
-  const [playerSearch, setPlayerSearch] = useState("");
-  const [playerRank, setPlayerRank] = useState("all");
-  const [playerPage, setPlayerPage] = useState(1);
-
   const [teamSearch, setTeamSearch] = useState("");
   const [teamPage, setTeamPage] = useState(1);
 
@@ -87,19 +78,6 @@ const Users = () => {
     setSelectedItemContext(context);
     setModalType(type);
   };
-
-  // --- Players Filtering & Pagination Engine ---
-  const filteredPlayers = PLATFORM_PLAYERS.filter((player) => {
-    const matchesSearch = player.name.toLowerCase().includes(playerSearch.toLowerCase()) || 
-                          player.team.toLowerCase().includes(playerSearch.toLowerCase());
-    const matchesRank = playerRank === "all" || player.rank.toLowerCase() === playerRank.toLowerCase();
-    return matchesSearch && matchesRank;
-  });
-
-  const totalPlayerPages = Math.ceil(filteredPlayers.length / ITEMS_PER_PAGE) || 1;
-  const playerStartIdx = filteredPlayers.length > 0 ? (playerPage - 1) * ITEMS_PER_PAGE + 1 : 0;
-  const playerEndIdx = Math.min(playerPage * ITEMS_PER_PAGE, filteredPlayers.length);
-  const visiblePlayers = filteredPlayers.slice((playerPage - 1) * ITEMS_PER_PAGE, playerPage * ITEMS_PER_PAGE);
 
   // --- Teams Filtering & Pagination Engine ---
   const filteredTeams = INITIAL_TEAMS.filter((team) => 
@@ -147,176 +125,7 @@ const Users = () => {
 
         {/* --- PLAYERS MANAGEMENT TAB PANEL --- */}
         <TabsContent value="players" className="space-y-6 outline-none focus:outline-none">
-          <div className="flex flex-col space-y-5 rounded-sm border border-border bg-card p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="sca-eyebrow mb-2">Player directory</p>
-                <h3 className="text-2xl font-semibold tracking-tight text-foreground">Players</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Manage all registered players and their competitive stats.</p>
-              </div>
-              <Button onClick={() => triggerModal("add-player")} className="h-11 w-full gap-2 rounded-sm bg-primary px-5 text-xs font-bold uppercase tracking-wider text-primary-foreground hover:bg-primary/90 sm:w-auto">
-                <Plus className="w-4 h-4 stroke-[3]" />
-                Add Player
-              </Button>
-            </div>
-
-            {/* Filter Tool Strip */}
-            <div className="flex flex-col gap-3 border border-border bg-background p-3 sm:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input 
-                  value={playerSearch}
-                  onChange={(e) => { setPlayerSearch(e.target.value); setPlayerPage(1); }}
-                  placeholder="Search players..." 
-                  className="h-11 w-full rounded-sm border-border bg-card pl-10 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
-                />
-              </div>
-              <Select value={playerRank} onValueChange={(val) => { setPlayerRank(val); setPlayerPage(1); }}>
-                <SelectTrigger className="h-11 w-full rounded-sm border-border bg-card px-4 text-sm font-semibold text-foreground sm:w-[210px]">
-                  <SelectValue placeholder="Filter by rank" />
-                </SelectTrigger>
-                <SelectContent className="rounded-sm border-border bg-popover text-popover-foreground">
-                  <SelectItem value="all">Filter by rank</SelectItem>
-                  <SelectItem value="grandmaster">Grandmaster</SelectItem>
-                  <SelectItem value="diamond">Diamond</SelectItem>
-                  <SelectItem value="platinum">Platinum</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Responsive Table Grid */}
-            <div className="overflow-x-auto w-full">
-              <Table className="w-full text-left text-xs border-collapse min-w-[700px]">
-                <TableHeader>
-                  <TableRow className="border-b border-border bg-secondary/50 hover:bg-secondary/50">
-                    <TableHead className="pb-3 pl-2 uppercase tracking-wider text-[9px] font-bold text-muted-foreground">Player</TableHead>
-                    <TableHead className="pb-3 uppercase tracking-wider text-[9px] font-bold text-muted-foreground">Team</TableHead>
-                    <TableHead className="pb-3 uppercase tracking-wider text-[9px] font-bold text-muted-foreground">Rank</TableHead>
-                    <TableHead className="pb-3 uppercase tracking-wider text-[9px] font-bold text-muted-foreground">Stats</TableHead>
-                    <TableHead className="pb-3 uppercase tracking-wider text-[9px] font-bold text-muted-foreground">Status</TableHead>
-                    <TableHead className="pb-3 text-right pr-2 uppercase tracking-wider text-[9px] font-bold text-muted-foreground">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-border font-medium">
-                  {visiblePlayers.length > 0 ? (
-                    visiblePlayers.map((player) => (
-                      <TableRow key={player.id} className="border-b border-border transition-colors hover:bg-secondary/50">
-                        <TableCell className="py-4 pl-2 font-medium">
-                          <div className="flex items-center space-x-3">
-                            <div className="flex h-9 w-9 items-center justify-center border border-border bg-primary/10 text-xs font-black text-primary">{player.name.slice(0, 2).toUpperCase()}</div>
-                            <span className="font-bold tracking-wide text-foreground">{player.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-4 font-semibold text-muted-foreground">{player.team}</TableCell>
-                        <TableCell className="py-4">
-                          <Badge className={`px-2 py-0.5 text-[9px] font-black tracking-wide rounded border bg-transparent pointer-events-none ${
-                            player.rank === 'Grandmaster' ? 'text-purple-400 border-purple-500/30 bg-purple-500/10' :
-                            player.rank === 'Diamond' ? 'text-primary border-primary/30 bg-primary/10' :
-                            'text-cyan-400 border-cyan-500/30 bg-cyan-500/10'
-                          }`}>
-                            {player.rank}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="py-4 font-bold font-mono text-[11px]">
-                          <span className="text-primary">{player.wins} W</span>
-                          <span className="mx-1.5 text-muted-foreground">/</span>
-                          <span className="text-rose-400">{player.losses} L</span>
-                        </TableCell>
-                        <TableCell className="py-4">
-                          <span className={`inline-flex items-center space-x-1.5 px-2 py-0.5 text-[9px] font-bold rounded-full ${
-                            player.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-muted text-muted-foreground'
-                          }`}>
-                            <span className={`w-1 h-1 rounded-full ${player.status === 'Active' ? 'bg-primary' : 'bg-muted-foreground'}`} />
-                            <span>{player.status}</span>
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-4 text-right pr-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-9 w-9 rounded-sm p-0 text-muted-foreground hover:bg-secondary hover:text-foreground">
-                                <MoreVertical className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="rounded-sm border-border bg-popover text-popover-foreground">
-                              <DropdownMenuItem onClick={() => triggerModal("edit-player", player)} className="cursor-pointer focus:bg-secondary focus:text-foreground"><Edit className="w-4 h-4 mr-2" /> Edit</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => triggerModal("delete", player)} className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">No matching players found.</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* --- SHADCN INTEGRATED PLAYERS FOOTER PAGINATION --- */}
-            <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-4 text-[10px] font-bold uppercase tracking-wider text-muted-foreground sm:flex-row">
-              <span>Showing {playerStartIdx}-{playerEndIdx} of {filteredPlayers.length} players</span>
-              
-              <Pagination className="mx-0 w-auto">
-                <PaginationContent className="gap-1">
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      href="#" 
-                      onClick={(e) => { e.preventDefault(); if (playerPage > 1) setPlayerPage(playerPage - 1); }}
-                      className={playerPage === 1 ? "opacity-40 pointer-events-none" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                  
-                  {Array.from({ length: totalPlayerPages }, (_, i) => i + 1).map((p) => (
-                    <PaginationItem key={p}>
-                      <PaginationLink 
-                        href="#" 
-                        isActive={p === playerPage} 
-                        onClick={(e) => { e.preventDefault(); setPlayerPage(p); }}
-                        className={`h-8 w-8 rounded-sm text-[11px] font-mono ${p === playerPage ? "bg-primary text-primary-foreground font-black" : "border border-border bg-background text-muted-foreground hover:text-foreground"}`}
-                      >
-                        {p}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-
-                  <PaginationItem>
-                    <PaginationNext 
-                      href="#" 
-                      onClick={(e) => { e.preventDefault(); if (playerPage < totalPlayerPages) setPlayerPage(playerPage + 1); }}
-                      className={playerPage === totalPlayerPages ? "opacity-40 pointer-events-none" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          </div>
-
-          {/* Metric Infocards Layer */}
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex items-center space-x-4 rounded-sm border border-border bg-card p-5">
-              <div className="border border-primary/25 bg-primary/10 p-3 text-primary"><TrendingUp className="w-4 h-4" /></div>
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Growth</p>
-                <p className="mt-0.5 text-xl font-semibold text-foreground">+12.4%</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4 rounded-sm border border-border bg-card p-5">
-              <div className="border border-primary/25 bg-primary/10 p-3 text-primary"><Swords className="w-4 h-4" /></div>
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Active Scrims</p>
-                <p className="mt-0.5 text-xl font-semibold text-foreground">42</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4 rounded-sm border border-border bg-card p-5">
-              <div className="border border-primary/25 bg-primary/10 p-3 text-primary"><Ticket className="w-4 h-4" /></div>
-              <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Open Tickets</p>
-                <p className="mt-0.5 text-xl font-semibold text-foreground">7</p>
-              </div>
-            </div>
-          </section>
+          <PlayerDirectory />
         </TabsContent>
 
         {/* --- TEAMS PANEL TAB INTERFACE --- */}

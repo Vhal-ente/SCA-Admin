@@ -57,7 +57,7 @@ const Tournaments = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const tournamentId = (location.state as { tournamentId?: number } | null)?.tournamentId;
+    const tournamentId = (location.state as { tournamentId?: string } | null)?.tournamentId;
     const tournament = tournaments.find((item) => item.id === tournamentId);
 
     if (tournament) {

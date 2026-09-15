@@ -32,6 +32,9 @@ export interface Tournament {
   bannerUrl?: string;
   publicationStatus?: "Draft" | "Published";
   phase?: "Registration" | "Drafting" | "Finalized";
+  registrationStatus?: "Scheduled" | "Open" | "Closed";
+  // The API's own status, kept so a save only sends a status the console changed.
+  apiStatus?: string;
 }
 
 interface TournamentModalProps {

@@ -1,5 +1,5 @@
 export interface Tournament {
-  id: number;
+  id: string;
   name: string;
   game: string;
   status: "Active" | "Upcoming" | "Completed";
@@ -19,11 +19,12 @@ export interface Tournament {
   registrationStatus?: "Scheduled" | "Open" | "Closed";
   registrationOpensAt?: string;
   registrationClosesAt?: string;
+  apiStatus?: string;
 }
 
 export interface TournamentModalProps {
   tournament: Tournament | null;
-  onSave: (tournamentData: Omit<Tournament, "id"> & { id?: number }) => void;
+  onSave: (tournamentData: Omit<Tournament, "id"> & { id?: string }) => void;
   onBack: () => void;
 }
 

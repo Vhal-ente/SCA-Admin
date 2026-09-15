@@ -76,6 +76,7 @@ export type ApiLeague = {
   maxTeams: number;
   teamsCount: number;
   entryFee: number;
+  prizeText: string;
   startsAt: string;
   status: string;
   publicationStatus: string;
