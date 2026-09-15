@@ -62,7 +62,7 @@ export type ApiTournament = {
   status: string;
   phase: string;
   publicationStatus: string;
-};
+} & ApiWorkspace;
 
 export type ApiLeague = {
   id: string;
@@ -76,7 +76,55 @@ export type ApiLeague = {
   maxTeams: number;
   teamsCount: number;
   entryFee: number;
+  prizeText: string;
   startsAt: string;
   status: string;
   publicationStatus: string;
+} & ApiWorkspace;
+
+export type WatchLinks = {
+  youtube: string;
+  twitch: string;
+  replays: { title: string; url: string }[];
+};
+
+// Fields tournaments and leagues share in the console's competition workspace.
+export type ApiWorkspace = {
+  registrationOpensAt: string;
+  registrationClosesAt: string;
+  prizeAllocations: number[];
+  watchLinks: WatchLinks;
+};
+
+export type EntryStatus = "pending" | "confirmed" | "waitlisted" | "disqualified" | "withdrawn";
+
+type EntryPerson = { id: string; ign: string; name: string; email: string };
+
+export type ApiEntry = {
+  id: string;
+  status: EntryStatus;
+  createdAt: string;
+  checkedInAt: string;
+  // The tournament entrant, or whoever submitted a league entry.
+  player: EntryPerson | null;
+  team: { id: string; name: string; slug: string; logoUrl: string; size: number } | null;
+  ign: string;
+  gamePlayerId: string;
+  platform: string;
+  contactEmail: string;
+  // not_required, unpaid, or the payment's own status (paid, refunded, ...).
+  paymentStatus: string;
+  paymentProvider: string;
+};
+
+export type ApiTeam = {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string;
+  region: string;
+  verified: boolean;
+  size: number;
+  captain: EntryPerson | null;
+  createdAt: string;
 };

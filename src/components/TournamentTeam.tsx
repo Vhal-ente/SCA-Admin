@@ -1,164 +1,147 @@
-import { useState } from "react";
-import { 
-  Users, CheckCircle2, Clock, XCircle, Trash2, 
-  Search, Plus, X, Save, Shield, UserPlus, Sliders, Upload 
-} from "lucide-react";
-import { playerCreatedTeams } from "@/data/playerTeams";
+import { useCallback, useEffect, useState } from "react";
+import { Ban, CheckCircle2, Clock, Hourglass, Plus, Search, UserPlus, Users, Wallet, X, XCircle } from "lucide-react";
+import { api, type AdminUser, type ApiEntry, type ApiTeam, type EntryStatus } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
-interface Team {
-  id: string;
-  name: string;
-  tag: string;
-  members: number;
-  status: "Approved" | "Pending" | "Rejected";
-  date: string;
-  source: "Admin" | "Player Dashboard";
-  paymentStatus: "Not Required" | "Pending" | "Paid" | "Failed";
-  players: Array<{ id: string; name: string; gamerTag: string; role: "Captain" | "Player" | "Substitute"; status: "Active" | "Pending" }>;
-  logoUrl?: string; // Appended to store image preview base64 or URL pointers
+type Phase = "Registration" | "Drafting" | "Finalized";
+
+interface TeamsTabProps {
+  activeTab: string;
+  entityType: "Tournament" | "League";
+  // Absent until the competition has been saved once.
+  competitionId?: string;
+  capacity?: number;
+  mode: "Player" | "Team";
+  entryType: "Free" | "Paid";
+  entryFee: string;
+  playerPhase: Phase;
+  setPlayerPhase: (phase: Phase) => void;
 }
 
-interface TournamentPlayer {
-  id: string;
-  name: string;
-  gamerTag: string;
-  gameId: string;
-  status: "Approved" | "Pending" | "Rejected";
-  source: "Player Dashboard" | "Admin";
-  paymentStatus: "Not Required" | "Pending" | "Paid" | "Failed";
-  registeredAt: string;
-  drafted: boolean;
-}
+const FILTERS: Array<{ value: EntryStatus | "active"; label: string }> = [
+  { value: "active", label: "Active" },
+  { value: "confirmed", label: "Confirmed" },
+  { value: "pending", label: "Pending" },
+  { value: "waitlisted", label: "Waitlisted" },
+  { value: "disqualified", label: "Disqualified" },
+  { value: "withdrawn", label: "Withdrawn" },
+];
 
-export const TeamsTab = ({ activeTab, mode, entryType, entryFee, playerPhase, setPlayerPhase }: { activeTab: string; mode: "Player" | "Team"; entryType: "Free" | "Paid"; entryFee: string; playerPhase: "Registration" | "Drafting" | "Finalized"; setPlayerPhase: (phase: "Registration" | "Drafting" | "Finalized") => void }) => {
-  const roster = (tag: string, names: string[]) => names.map((name, index) => ({ id: `${tag}-${index + 1}`, name, gamerTag: `${tag}${index + 1}`, role: (index === 0 ? "Captain" : "Player") as "Captain" | "Player", status: "Active" as const }));
-  
-  const [teams, setTeams] = useState<Team[]>([
-    { id: "1", name: "Sentinels Alpha", tag: "SEN", members: 5, status: "Approved", date: "2026-06-01", source: "Player Dashboard", paymentStatus: "Paid", players: roster("SEN", ["Marcus Vance", "Elena Cruz", "Dayo Cole", "Mira James", "Tobi Adeyemi"]) },
-    { id: "2", name: "Natus Vincere", tag: "NAVI", members: 5, status: "Pending", date: "2026-06-05", source: "Player Dashboard", paymentStatus: "Pending", players: roster("NAVI", ["Alex Koval", "Ivan Petrov", "Mika Stone", "Nora Vale", "Sam Ridge"]) },
-    { id: "3", name: "Fnatic Rising", tag: "FNC", members: 6, status: "Approved", date: "2026-05-28", source: "Admin", paymentStatus: "Not Required", players: roster("FNC", ["Jamie Brooks", "Lena Hart", "Kofi Mensah", "Ava Cole", "Noah Miles", "Rae Quinn"]) },
-    { id: "4", name: "T1 Academy", tag: "T1", members: 5, status: "Rejected", date: "2026-05-20", source: "Player Dashboard", paymentStatus: "Failed", players: roster("T1", ["Jin Park", "Min Seo", "Kai Lee", "Han Kim", "Yun Choi"]) },
-  ]);
-  const [players, setPlayers] = useState<TournamentPlayer[]>([
-    { id: "p1", name: "Marcus Vance", gamerTag: "ArcVance", gameId: "WZ-10482", status: "Approved", source: "Player Dashboard", paymentStatus: "Paid", registeredAt: "2026-06-01", drafted: true },
-    { id: "p2", name: "Elena Cruz", gamerTag: "NovaCruz", gameId: "WZ-20891", status: "Pending", source: "Player Dashboard", paymentStatus: "Pending", registeredAt: "2026-06-05", drafted: false },
-    { id: "p3", name: "Kofi Mensah", gamerTag: "KoFury", gameId: "WZ-31576", status: "Approved", source: "Player Dashboard", paymentStatus: "Paid", registeredAt: "2026-05-28", drafted: false },
-    { id: "p4", name: "Ava Cole", gamerTag: "AvaStrike", gameId: "WZ-41730", status: "Rejected", source: "Admin", paymentStatus: "Failed", registeredAt: "2026-05-20", drafted: false },
-  ]);
+const STATUS_STYLE: Record<EntryStatus, { bar: string; badge: string; icon: typeof CheckCircle2 }> = {
+  confirmed: { bar: "bg-primary", badge: "border-primary/25 bg-primary/10 text-primary", icon: CheckCircle2 },
+  pending: { bar: "bg-amber-500", badge: "border-amber-500/25 bg-amber-500/10 text-amber-500", icon: Clock },
+  waitlisted: { bar: "bg-sky-500", badge: "border-sky-500/25 bg-sky-500/10 text-sky-400", icon: Hourglass },
+  disqualified: { bar: "bg-destructive", badge: "border-destructive/25 bg-destructive/10 text-destructive", icon: XCircle },
+  withdrawn: { bar: "bg-muted-foreground/40", badge: "border-border bg-secondary/60 text-muted-foreground", icon: X },
+};
 
-  // Interactivity Visibility State Engine Hooks
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isManageDrawerOpen, setIsManageDrawerOpen] = useState(false);
-  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [registrationSource, setRegistrationSource] = useState<"existing" | "manual">("existing");
-  const [selectedExistingTeamId, setSelectedExistingTeamId] = useState("");
-  const [newPlayerGameId, setNewPlayerGameId] = useState("");
+const SEARCH_DELAY_MS = 300;
 
-  // Form Configuration Targeting Hooks
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [newTeam, setNewTeam] = useState({ 
-    name: "", 
-    tag: "", 
-    members: 5, 
-    status: "Pending" as Team["status"],
-    logoUrl: "",
-    paymentStatus: (entryType === "Paid" ? "Pending" : "Not Required") as Team["paymentStatus"],
-  });
-  
+const initials = (value: string) => value.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "?";
+
+export const TeamsTab = ({ activeTab, entityType, competitionId, capacity, mode, entryType, entryFee, playerPhase, setPlayerPhase }: TeamsTabProps) => {
+  const { toast } = useToast();
+  const base = competitionId ? `/admin/${entityType === "League" ? "leagues" : "tournaments"}/${competitionId}/registrations` : "";
+  const noun = mode === "Team" ? "team" : "player";
+
+  const [entries, setEntries] = useState<ApiEntry[]>([]);
+  const [loading, setLoading] = useState(Boolean(base));
+  const [loadError, setLoadError] = useState("");
+  const [filter, setFilter] = useState<EntryStatus | "active">("active");
+  const [search, setSearch] = useState("");
+  const [busyId, setBusyId] = useState("");
+  const [toDisqualify, setToDisqualify] = useState<ApiEntry | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  const loadEntries = useCallback(async () => {
+    if (!base) return;
+    try {
+      const { registrations } = await api.get<{ registrations: ApiEntry[] }>(base);
+      setEntries(registrations);
+      setLoadError("");
+    } catch (error) {
+      setLoadError((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [base]);
+
+  useEffect(() => { loadEntries(); }, [loadEntries]);
+
   if (activeTab !== "PARTICIPANTS") return null;
 
-  // Image Conversion Processor Stream Logic
-  const handleImageUpload = (file: File, type: "CREATE" | "UPDATE") => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (type === "CREATE") {
-        setNewTeam(prev => ({ ...prev, logoUrl: reader.result as string }));
-      } else if (type === "UPDATE" && selectedTeam) {
-        setSelectedTeam(prev => prev ? { ...prev, logoUrl: reader.result as string } : null);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Action Process Flows
-  const handleAddTeamSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTeam.name || !newTeam.tag) return;
-
-    if (mode === "Player") {
-      if (!newPlayerGameId.trim()) return;
-      setPlayers(current => [...current, { id: `player-${Date.now()}`, name: newTeam.name, gamerTag: newTeam.tag, gameId: newPlayerGameId, status: newTeam.status, source: "Admin", paymentStatus: newTeam.paymentStatus, registeredAt: new Date().toISOString().split("T")[0], drafted: false }]);
-      setNewTeam({ name: "", tag: "", members: 5, status: "Pending", logoUrl: "", paymentStatus: entryType === "Paid" ? "Pending" : "Not Required" });
-      setNewPlayerGameId("");
-      setIsAddModalOpen(false);
-      return;
+  const run = async (entry: ApiEntry, label: string, request: () => Promise<unknown>) => {
+    setBusyId(entry.id);
+    try {
+      await request();
+      toast({ title: label });
+      await loadEntries();
+    } catch (error) {
+      toast({ title: "Could not update entry", description: (error as Error).message, variant: "destructive" });
+    } finally {
+      setBusyId("");
     }
-    
-    const teamRecord: Team = {
-      id: Date.now().toString(),
-      name: newTeam.name,
-      tag: newTeam.tag.toUpperCase(),
-      members: Number(newTeam.members),
-      status: newTeam.status,
-      date: new Date().toISOString().split("T")[0],
-      logoUrl: newTeam.logoUrl || undefined
-      ,source: "Admin",
-      paymentStatus: newTeam.paymentStatus,
-      players: selectedExistingTeamId
-        ? (playerCreatedTeams.find((team) => team.id === selectedExistingTeamId)?.players || []).map((name, index) => ({ id: `${newTeam.tag}-${index + 1}`, name, gamerTag: `${newTeam.tag}${index + 1}`, role: index === 0 ? "Captain" : "Player", status: "Active" }))
-        : roster(newTeam.tag, Array.from({ length: Number(newTeam.members) }, (_, index) => `Player ${index + 1}`)),
-    };
-
-    setTeams([...teams, teamRecord]);
-    setNewTeam({ name: "", tag: "", members: 5, status: "Pending", logoUrl: "", paymentStatus: entryType === "Paid" ? "Pending" : "Not Required" });
-    setSelectedExistingTeamId("");
-    setRegistrationSource("existing");
-    setIsAddModalOpen(false);
   };
 
-  const selectExistingTeam = (teamId: string) => {
-    setSelectedExistingTeamId(teamId);
-    const existingTeam = playerCreatedTeams.find((team) => team.id === teamId);
-    if (!existingTeam) return;
-    setNewTeam({
-      name: existingTeam.name,
-      tag: existingTeam.tag,
-      members: existingTeam.members,
-      status: "Pending",
-      logoUrl: existingTeam.logoUrl,
-      paymentStatus: entryType === "Paid" ? "Pending" : "Not Required",
-    });
+  const entryName = (entry: ApiEntry) => entry.team?.name || entry.ign || entry.player?.ign || "Unnamed entrant";
+  const setStatus = (entry: ApiEntry, status: EntryStatus, label: string) =>
+    run(entry, `${entryName(entry)} ${label}`, () => api.patch(`${base}/${entry.id}`, { status }));
+  const recordPayment = (entry: ApiEntry) =>
+    run(entry, `Payment recorded for ${entryName(entry)}`, () => api.post(`${base}/${entry.id}/payment`));
+
+  const confirmedCount = entries.filter((entry) => entry.status === "confirmed").length;
+  const countFor = (value: EntryStatus | "active") =>
+    entries.filter((entry) => (value === "active" ? entry.status !== "withdrawn" : entry.status === value)).length;
+  const term = search.trim().toLowerCase();
+  const visible = entries
+    .filter((entry) => (filter === "active" ? entry.status !== "withdrawn" : entry.status === filter))
+    .filter((entry) => !term || [entryName(entry), entry.player?.ign, entry.player?.email, entry.gamePlayerId]
+      .some((value) => value?.toLowerCase().includes(term)));
+
+  const paymentChip = (entry: ApiEntry) => {
+    if (entry.paymentStatus === "not_required") return { text: "Free entry", style: "border-border bg-secondary/60 text-muted-foreground" };
+    if (entry.paymentStatus === "unpaid") return { text: `Unpaid · ${entryFee}`, style: "border-amber-500/25 bg-amber-500/10 text-amber-500" };
+    if (entry.paymentStatus === "paid") return { text: `Paid${entry.paymentProvider === "manual" ? " off-site" : ""} · ${entryFee}`, style: "border-primary/20 bg-primary/10 text-primary" };
+    return { text: entry.paymentStatus.replace(/_/g, " "), style: "border-border bg-secondary/60 text-muted-foreground" };
   };
 
-  const handleUpdateTeamSave = () => {
-    if (!selectedTeam) return;
-    setTeams(teams.map(t => t.id === selectedTeam.id ? selectedTeam : t));
-    setIsManageDrawerOpen(false);
+  // The main action moves an entry along; drafting swaps confirmed and waitlisted.
+  const primaryAction = (entry: ApiEntry) => {
+    const drafting = mode === "Player" && playerPhase === "Drafting";
+    switch (entry.status) {
+      case "pending":
+        return { label: entry.paymentStatus === "unpaid" ? "Confirm without fee" : "Confirm", run: () => setStatus(entry, "confirmed", "confirmed") };
+      case "confirmed":
+        return drafting ? { label: "Remove from draft", run: () => setStatus(entry, "waitlisted", "moved to the waitlist") } : null;
+      case "waitlisted":
+        return { label: drafting ? "Select for draft" : "Confirm", run: () => setStatus(entry, "confirmed", "confirmed") };
+      case "disqualified":
+        return { label: "Reinstate as pending", run: () => setStatus(entry, "pending", "reinstated") };
+      default:
+        return null;
+    }
   };
-
-  const handleDeleteConfirm = () => {
-    if (!selectedTeam) return;
-    setTeams(teams.filter(t => t.id !== selectedTeam.id));
-    setIsDeleteAlertOpen(false);
-    setSelectedTeam(null);
-  };
-
-  const filteredTeams = teams.filter(t => 
-    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.tag.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  const filteredPlayers = players.filter(player => player.name.toLowerCase().includes(searchQuery.toLowerCase()) || player.gamerTag.toLowerCase().includes(searchQuery.toLowerCase()) || player.gameId.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      <div><p className="sca-eyebrow mb-2">Registration</p><h2 className="text-2xl font-semibold tracking-tight text-foreground">Tournament {mode === "Team" ? "teams" : "players"}</h2><p className="mt-1 text-sm text-muted-foreground">Review registrations, validate {mode === "Team" ? "rosters" : "player profiles"}, and manage approved participants.</p></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="sca-eyebrow mb-2">Registration</p>
+          <h2 className="text-2xl font-semibold tracking-tight text-foreground">{entityType} {noun}s</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Review entries, record fees paid off-site, and manage the confirmed field.</p>
+        </div>
+        {base && <p className="text-sm font-semibold text-foreground">{confirmedCount}{capacity ? ` of ${capacity}` : ""} <span className="font-normal text-muted-foreground">confirmed</span></p>}
+      </div>
 
       {mode === "Player" && (
         <div className="grid overflow-hidden border border-border bg-card lg:grid-cols-[1fr_auto]">
           <div className="flex items-start gap-4 p-5">
             <span className="flex h-10 w-10 shrink-0 items-center justify-center bg-primary/10 text-primary"><UserPlus className="h-5 w-5" /></span>
-            <div><div className="flex flex-wrap items-center gap-2"><p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Published tournament</p><span className="border border-primary/20 bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">Visible on frontend</span></div><h3 className="mt-1 font-semibold text-foreground">{playerPhase === "Registration" ? "Player registration is open" : playerPhase === "Drafting" ? "Player drafting is in progress" : "Tournament roster finalized"}</h3><p className="mt-1 text-sm text-muted-foreground">{playerPhase === "Registration" ? "Players register from their dashboard. Review and approve profiles before closing registration." : playerPhase === "Drafting" ? "Registration is closed. Select approved players to build the final tournament field." : "The selected player field is locked and ready for match generation."}</p></div>
+            <div><h3 className="font-semibold text-foreground">{playerPhase === "Registration" ? "Player registration is open" : playerPhase === "Drafting" ? "Player drafting is in progress" : "Tournament roster finalized"}</h3><p className="mt-1 text-sm text-muted-foreground">{playerPhase === "Registration" ? "Players register from their dashboard. Confirm entries before closing registration." : playerPhase === "Drafting" ? "Select confirmed players for the final field. Removing one moves them to the waitlist." : "The selected player field is locked and ready for match generation."}</p></div>
           </div>
           <div className="flex items-center gap-3 border-t border-border p-5 lg:border-l lg:border-t-0">
             <div className="mr-2 text-right"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Workflow</p><p className="text-sm font-semibold text-foreground">{playerPhase} phase</p></div>
@@ -168,419 +151,218 @@ export const TeamsTab = ({ activeTab, mode, entryType, entryFee, playerPhase, se
           </div>
         </div>
       )}
-      
-      {/* ─── ACTION HEADER CONTROLS BAR ─── */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center bg-card p-4 rounded-sm border border-border">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-          <input 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search registered ${mode === "Team" ? "teams" : "players"}...`}
-            className="w-full bg-background text-sm text-foreground pl-9 pr-4 py-2 rounded-sm border border-input focus:border-primary outline-none transition-colors"
-          />
+
+      {!base ? (
+        <div className="border border-dashed border-border bg-card px-6 py-16 text-center">
+          <Users className="mx-auto h-8 w-8 text-primary" />
+          <h3 className="mt-4 font-semibold">Save the {entityType.toLowerCase()} first</h3>
+          <p className="mt-1 text-sm text-muted-foreground">Entries can be reviewed and added once it exists.</p>
         </div>
-        {(mode === "Team" || playerPhase === "Registration") && <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground text-sm font-bold rounded-sm hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4 stroke-[3]" /> Add {mode === "Team" ? "Team" : "Player"}
-        </button>}
-      </div>
-
-      {/* ─── TEAM PARTICIPANTS GRID GRID ─── */}
-      {mode === "Team" ? (
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {filteredTeams.map((team) => (
-          <div key={team.id} className="group relative flex min-h-[19rem] flex-col justify-between overflow-hidden border border-border bg-card p-5 transition-colors hover:border-primary/50">
-            <div className={`absolute inset-x-0 top-0 h-0.5 ${team.status === "Approved" ? "bg-primary" : team.status === "Pending" ? "bg-amber-500" : "bg-destructive"}`} />
-            <div>
-              <div className="mb-6 flex items-start justify-between">
-                {/* Image Avatar Container Frame */}
-                {team.logoUrl ? (
-                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden border border-border bg-background transition-colors group-hover:border-primary/50">
-                    <img src={team.logoUrl} alt={`${team.name} Logo`} className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="flex h-14 w-14 items-center justify-center border border-border bg-background text-sm font-black text-primary transition-colors group-hover:border-primary/50">
-                    {team.tag}
-                  </div>
-                )}
-                
-                <span className={`flex items-center gap-1.5 border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] ${
-                  team.status === "Approved" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" :
-                  team.status === "Pending" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
-                  "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                }`}>
-                  {team.status === "Approved" && <CheckCircle2 className="w-3 h-3" />}
-                  {team.status === "Pending" && <Clock className="w-3 h-3" />}
-                  {team.status === "Rejected" && <XCircle className="w-3 h-3" />}
-                  {team.status}
-                </span>
-              </div>
-
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">{team.tag} · Tournament entry</p>
-              <h4 className="truncate text-lg font-semibold text-foreground">{team.name}</h4>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                <span className="border border-border bg-secondary/60 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{team.source}</span>
-                <span className={`border px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${team.paymentStatus === "Paid" ? "border-primary/20 bg-primary/10 text-primary" : team.paymentStatus === "Failed" ? "border-destructive/20 bg-destructive/10 text-destructive" : "border-border bg-secondary/60 text-muted-foreground"}`}>{entryType === "Paid" ? `${team.paymentStatus} · ${entryFee}` : "Free entry"}</span>
-              </div>
-              
-              <div className="mt-5 grid grid-cols-2 border-y border-border py-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-2 border-r border-border"><Users className="h-4 w-4 text-primary" /> {team.members} players</span>
-                <span className="pl-4"><span className="block text-[9px] font-bold uppercase tracking-wider">Registered</span>{new Date(team.date).toLocaleDateString()}</span>
-              </div>
-            </div>
-
-            {/* ACTION TRIGGERS AREA */}
-            <div className="mt-5 flex gap-2">
-              <button 
-                onClick={() => { setSelectedTeam(team); setIsManageDrawerOpen(true); }}
-                className="flex h-11 flex-1 items-center justify-center gap-2 border border-border bg-background text-xs font-bold uppercase tracking-wide text-foreground transition-colors hover:border-primary hover:text-primary"
-              >
-                <Sliders className="h-4 w-4" /> Manage team
-              </button>
-              <button 
-                onClick={() => { setSelectedTeam(team); setIsDeleteAlertOpen(true); }}
-                className="flex h-11 w-11 items-center justify-center border border-border bg-background text-muted-foreground transition-colors hover:border-destructive hover:bg-destructive/5 hover:text-destructive"
-                title="Remove Entry"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {filteredPlayers.map(player => (
-            <div key={player.id} className="relative flex min-h-[19rem] flex-col justify-between overflow-hidden border border-border bg-card p-5">
-              <div className={`absolute inset-x-0 top-0 h-0.5 ${player.status === "Approved" ? "bg-primary" : player.status === "Pending" ? "bg-amber-500" : "bg-destructive"}`} />
-              <div>
-                <div className="mb-6 flex items-start justify-between">
-                  <div className="flex h-14 w-14 items-center justify-center border border-border bg-background text-sm font-black text-primary">{player.name.split(" ").map(part => part[0]).join("").slice(0, 2)}</div>
-                  <span className={`border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] ${player.status === "Approved" ? "border-primary/25 bg-primary/10 text-primary" : player.status === "Pending" ? "border-amber-500/25 bg-amber-500/10 text-amber-500" : "border-destructive/25 bg-destructive/10 text-destructive"}`}>{player.status}</span>
-                </div>
-                <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-primary">@{player.gamerTag} · Player entry</p>
-                <h4 className="text-lg font-semibold text-foreground">{player.name}</h4>
-                <p className="mt-1 text-xs text-muted-foreground">Game ID: {player.gameId}</p>
-                <div className="mt-3 flex flex-wrap gap-1.5"><span className="border border-border bg-secondary/60 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">{player.source}</span><span className={`border px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${player.paymentStatus === "Paid" ? "border-primary/20 bg-primary/10 text-primary" : player.paymentStatus === "Failed" ? "border-destructive/20 bg-destructive/10 text-destructive" : "border-border bg-secondary/60 text-muted-foreground"}`}>{entryType === "Paid" ? `${player.paymentStatus} · ${entryFee}` : "Free entry"}</span></div>
-                <div className="mt-5 grid grid-cols-2 border-y border-border py-3 text-xs text-muted-foreground"><div className="border-r border-border"><span className="block text-[9px] font-bold uppercase tracking-wider">Registered</span>{new Date(player.registeredAt).toLocaleDateString()}</div><div className="pl-4"><span className="block text-[9px] font-bold uppercase tracking-wider">Draft status</span><span className={player.drafted ? "text-primary" : "text-muted-foreground"}>{player.drafted ? "Selected" : "Not selected"}</span></div></div>
-              </div>
-              <div className="mt-5 flex gap-2">
-                {playerPhase === "Registration" ? <button onClick={() => setPlayers(current => current.map(item => item.id === player.id ? { ...item, status: item.status === "Approved" ? "Pending" : "Approved" } : item))} className="h-11 flex-1 border border-border bg-background text-xs font-bold uppercase tracking-wide text-foreground hover:border-primary hover:text-primary">{player.status === "Approved" ? "Move to pending" : "Approve player"}</button> : <button disabled={player.status !== "Approved" || playerPhase === "Finalized"} onClick={() => setPlayers(current => current.map(item => item.id === player.id ? { ...item, drafted: !item.drafted } : item))} className={`h-11 flex-1 border text-xs font-bold uppercase tracking-wide disabled:cursor-not-allowed disabled:opacity-40 ${player.drafted ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-foreground hover:border-primary"}`}>{player.drafted ? "Remove from draft" : "Select player"}</button>}
-                <button onClick={() => setPlayers(current => current.filter(item => item.id !== player.id))} className="flex h-11 w-11 items-center justify-center border border-border bg-background text-muted-foreground hover:border-destructive hover:text-destructive" title="Remove player"><Trash2 className="h-4 w-4" /></button>
-              </div>
+        <>
+          <div className="flex flex-col gap-4 rounded-sm border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex max-w-full gap-1 overflow-x-auto">
+              {FILTERS.map((item) => (
+                <button key={item.value} onClick={() => setFilter(item.value)} className={`min-w-fit rounded-sm px-3 py-2 text-[11px] font-bold uppercase tracking-wider transition-colors ${filter === item.value ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground"}`}>
+                  {item.label}<span className="ml-1.5 opacity-70">{countFor(item.value)}</span>
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* ─── MODAL DIALOG: ADD NEW TEAM REGISTER ─── */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-sm border border-border bg-card shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="flex items-start justify-between border-b border-border px-6 py-5">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-sm bg-primary/10 text-primary"><UserPlus className="w-5 h-5" /></div>
-                <div><p className="sca-eyebrow mb-1">Registration</p><h3 className="text-2xl font-semibold tracking-tight text-foreground">Add New Tournament {mode === "Team" ? "Team" : "Player"}</h3><p className="mt-1 text-sm text-muted-foreground">Create and validate a new {mode.toLowerCase()} participant record.</p></div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="relative sm:w-64">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={`Search ${noun}s...`} className="w-full rounded-sm border border-input bg-background py-2 pl-9 pr-4 text-sm text-foreground outline-none transition-colors focus:border-primary" />
               </div>
-              <button onClick={() => setIsAddModalOpen(false)} className="rounded-sm p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><X className="w-5 h-5" /></button>
-            </div>
-
-            <form onSubmit={handleAddTeamSubmit} className="space-y-6 p-6">
-              {mode === "Team" && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2 rounded-sm border border-border bg-secondary p-1">
-                    <button type="button" onClick={() => setRegistrationSource("existing")} className={`rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors ${registrationSource === "existing" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Choose existing team</button>
-                    <button type="button" onClick={() => { setRegistrationSource("manual"); setSelectedExistingTeamId(""); }} className={`rounded-sm px-4 py-2.5 text-sm font-semibold transition-colors ${registrationSource === "manual" ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Create manually</button>
-                  </div>
-
-                  {registrationSource === "existing" && (
-                    <div>
-                      <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Player-created team</label>
-                      <select value={selectedExistingTeamId} onChange={(event) => selectExistingTeam(event.target.value)} className="h-11 w-full rounded-sm border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary" required>
-                        <option value="">Select an existing team</option>
-                        {playerCreatedTeams.map((team) => <option key={team.id} value={team.id}>{team.name} ({team.tag}) · {team.members} players · Owner: {team.owner}</option>)}
-                      </select>
-                      {selectedExistingTeamId && (
-                        <p className="mt-2 text-xs text-muted-foreground">Team details are linked from the player-created team profile and prefilled below for review.</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Image Upload Row */}
-              <div className={`flex items-center gap-4 rounded-sm border border-border bg-secondary p-4 ${mode === "Team" && registrationSource === "existing" ? "opacity-75" : ""}`}>
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-background">
-                  {newTeam.logoUrl ? (
-                    <img src={newTeam.logoUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-xs font-bold text-muted-foreground uppercase">{newTeam.tag || (mode === "Team" ? "LOGO" : "PHOTO")}</span>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">{mode === "Team" ? "Team insignia / brand" : "Player photo / avatar"}</label>
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById("create-logo-upload")?.click()}
-                    disabled={mode === "Team" && registrationSource === "existing"}
-                    className="flex items-center gap-2 rounded-sm border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:border-primary/50 hover:text-primary transition-colors"
-                  >
-                    <Upload className="w-3.5 h-3.5" /> Upload File
-                  </button>
-                  <input 
-                    id="create-logo-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={e => {
-                      const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file, "CREATE");
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-5 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">{mode === "Team" ? "Team name" : "Player display name"}</label>
-                <input 
-                  required
-                  placeholder={mode === "Team" ? "e.g. Sentinels Alpha" : "e.g. Adebola Goodness"}
-                  value={newTeam.name}
-                  onChange={e => setNewTeam({...newTeam, name: e.target.value})}
-                  className="h-11 w-full rounded-sm border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-70"
-                  disabled={mode === "Team" && registrationSource === "existing"}
-                />
-              </div>
-              
-                <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">{mode === "Team" ? "Abbreviation tag" : "Gamer tag"}</label>
-                  <input 
-                    required
-                    maxLength={mode === "Team" ? 4 : 24}
-                    placeholder={mode === "Team" ? "SEN" : "ArcVance"}
-                    value={newTeam.tag}
-                    onChange={e => setNewTeam({...newTeam, tag: mode === "Team" ? e.target.value.toUpperCase() : e.target.value})}
-                    className={`h-11 w-full rounded-sm border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-70 ${mode === "Team" ? "uppercase" : ""}`}
-                    disabled={mode === "Team" && registrationSource === "existing"}
-                  />
-                </div>
-                <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">{mode === "Team" ? "Active players" : "Game ID"}</label>
-                  {mode === "Team" ? <input type="number" min={1} value={newTeam.members} onChange={e => setNewTeam({...newTeam, members: parseInt(e.target.value) || 5})} className="h-11 w-full rounded-sm border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-70" disabled={registrationSource === "existing"} /> : <input required value={newPlayerGameId} onChange={event => setNewPlayerGameId(event.target.value)} placeholder="e.g. WZ-10482" className="h-11 w-full rounded-sm border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary" />}
-                </div>
-              <div className="md:col-span-2">
-                <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Registration status</label>
-                <select 
-                  value={newTeam.status}
-                  onChange={e => setNewTeam({...newTeam, status: e.target.value as Team["status"]})}
-                  className="h-11 w-full rounded-sm border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                >
-                  <option value="Pending">Pending Audit</option>
-                  <option value="Approved">Approved / Qualified</option>
-                </select>
-              </div>
-              {entryType === "Paid" && (
-                <div className="md:col-span-2">
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Payment status · {entryFee}</label>
-                  <select value={newTeam.paymentStatus} onChange={(event) => setNewTeam({ ...newTeam, paymentStatus: event.target.value as Team["paymentStatus"] })} className="h-11 w-full rounded-sm border border-input bg-background px-4 text-sm text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary">
-                    <option value="Pending">Payment pending</option><option value="Paid">Paid and verified</option><option value="Failed">Payment failed</option>
-                  </select>
-                </div>
-              )}
-              </div>
-
-              <div className="flex flex-col-reverse justify-end gap-3 border-t border-border pt-5 sm:flex-row">
-                <button type="button" onClick={() => setIsAddModalOpen(false)} className="h-11 rounded-sm border border-border px-6 text-sm font-semibold text-muted-foreground hover:text-foreground">Cancel</button>
-                <button type="submit" className="h-11 rounded-sm bg-primary px-6 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors">Register {mode === "Team" ? "Team" : "Player"}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ─── SLIDE DRAWER: ROSTER CONFIGURATION MANAGEMENT ─── */}
-      {isManageDrawerOpen && selectedTeam && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex justify-end">
-          <div className="bg-card border-l border-border w-full max-w-xl h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-200">
-            <div className="min-h-0 flex-1 overflow-y-auto">
-              <div className="flex items-start justify-between border-b border-border bg-secondary/35 px-7 py-6">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center bg-primary/10 text-primary">
-                    <Shield className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">Team administration</p>
-                    <h3 className="mt-1 text-2xl font-semibold text-foreground">Manage Team</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">Review the roster and update this tournament entry.</p>
-                  </div>
-                </div>
-                <button onClick={() => setIsManageDrawerOpen(false)} className="p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground" aria-label="Close team drawer"><X className="h-5 w-5" /></button>
-              </div>
-
-              <div className="space-y-7 p-7">
-                {/* Updatable Roster Image Layout Segment */}
-                <div className="flex items-center gap-5 border border-border bg-secondary/40 p-5">
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden border border-border bg-background">
-                    {selectedTeam.logoUrl ? (
-                      <img src={selectedTeam.logoUrl} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-sm font-black uppercase text-muted-foreground">{selectedTeam.tag}</span>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Team insignia / brand</label>
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById("update-logo-upload")?.click()}
-                      className="flex items-center gap-2 border border-border bg-background px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-foreground transition-colors hover:border-primary hover:text-primary"
-                    >
-                      <Upload className="w-3.5 h-3.5" /> Modify Brand File
-                    </button>
-                    <input 
-                      id="update-logo-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file, "UPDATE");
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="mb-2 flex items-end justify-between gap-3">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Team roster</label>
-                      <p className="mt-1 text-xs text-muted-foreground">Players registered with this team.</p>
-                    </div>
-                    <span className="rounded-sm border border-border bg-secondary px-2.5 py-1 text-xs font-bold text-primary">
-                      {selectedTeam.players.length} players
-                    </span>
-                  </div>
-
-                  <div className="overflow-hidden rounded-sm border border-border bg-secondary/40">
-                    {selectedTeam.players.length > 0 ? selectedTeam.players.map((player, index) => (
-                      <div
-                        key={player.id}
-                        className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
-                      >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-bold text-primary">
-                          {player.name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase() || index + 1}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-bold text-foreground">{player.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">@{player.gamerTag}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="block text-xs font-bold text-foreground">{player.role}</span>
-                          <span className={`mt-1 inline-flex rounded-sm px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-                            player.status === "Active"
-                              ? "bg-primary/10 text-primary"
-                              : "bg-amber-500/10 text-amber-500"
-                          }`}>
-                            {player.status}
-                          </span>
-                        </div>
-                      </div>
-                    )) : (
-                      <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                        No players have been added to this team yet.
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Tournament team name</label>
-                  <input 
-                    value={selectedTeam.name}
-                    onChange={e => setSelectedTeam({...selectedTeam, name: e.target.value})}
-                    className="h-12 w-full border border-border bg-background px-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Tag signature</label>
-                    <input 
-                      maxLength={4}
-                      value={selectedTeam.tag}
-                      onChange={e => setSelectedTeam({...selectedTeam, tag: e.target.value.toUpperCase()})}
-                      className="h-12 w-full border border-border bg-background px-4 text-sm uppercase text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Member seed</label>
-                    <input 
-                      type="number"
-                      value={selectedTeam.members}
-                      onChange={e => setSelectedTeam({...selectedTeam, members: parseInt(e.target.value) || 0})}
-                      className="h-12 w-full border border-border bg-background px-4 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Registration status</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(["Approved", "Pending", "Rejected"] as const).map((st) => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setSelectedTeam({...selectedTeam, status: st})}
-                        className={`h-11 border text-xs font-bold uppercase tracking-wide transition-all ${
-                          selectedTeam.status === st 
-                            ? st === "Approved" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/40" :
-                              st === "Pending" ? "bg-amber-500/10 text-amber-400 border-amber-500/40" :
-                              "bg-rose-500/10 text-rose-400 border-rose-500/40"
-                            : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                        }`}
-                      >
-                        {st}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 border-t border-border bg-card p-6">
-              <button onClick={() => setIsManageDrawerOpen(false)} className="h-12 flex-1 border border-border bg-background text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:border-foreground hover:text-foreground">Discard</button>
-              <button onClick={handleUpdateTeamSave} className="flex h-12 flex-[1.4] items-center justify-center gap-2 bg-primary text-sm font-bold uppercase tracking-wide text-primary-foreground transition-all hover:brightness-105">
-                <Save className="w-4 h-4" /> Commit Changes
+              <button onClick={() => setAdding(true)} className="flex items-center justify-center gap-2 rounded-sm bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90">
+                <Plus className="h-4 w-4 stroke-[3]" /> Add {noun}
               </button>
             </div>
           </div>
-        </div>
+
+          {loadError && <p role="alert" className="rounded-sm border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm font-medium text-destructive">{loadError}</p>}
+
+          {loading ? (
+            <p className="py-16 text-center text-sm text-muted-foreground">Loading entries…</p>
+          ) : visible.length ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {visible.map((entry) => {
+                const style = STATUS_STYLE[entry.status] || STATUS_STYLE.pending;
+                const StatusIcon = style.icon;
+                const chip = paymentChip(entry);
+                const action = primaryAction(entry);
+                const busy = busyId === entry.id;
+                const active = entry.status !== "withdrawn";
+                return (
+                  <div key={entry.id} className="relative flex min-h-[18rem] flex-col justify-between overflow-hidden border border-border bg-card p-5 transition-colors hover:border-primary/50">
+                    <div className={`absolute inset-x-0 top-0 h-0.5 ${style.bar}`} />
+                    <div>
+                      <div className="mb-6 flex items-start justify-between">
+                        {entry.team?.logoUrl ? (
+                          <div className="flex h-14 w-14 items-center justify-center overflow-hidden border border-border bg-background"><img src={entry.team.logoUrl} alt="" className="h-full w-full object-cover" /></div>
+                        ) : (
+                          <div className="flex h-14 w-14 items-center justify-center border border-border bg-background text-sm font-black text-primary">{initials(entryName(entry))}</div>
+                        )}
+                        <span className={`flex items-center gap-1.5 border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] ${style.badge}`}><StatusIcon className="h-3 w-3" />{entry.status}</span>
+                      </div>
+                      <p className="mb-1 truncate text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                        {entry.team ? `${entry.team.size} on roster` : `@${entry.player?.ign || entry.ign}`}
+                      </p>
+                      <h4 className="truncate text-lg font-semibold text-foreground">{entryName(entry)}</h4>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">
+                        {entry.team
+                          ? `Entered by ${entry.player?.ign || "unknown"}`
+                          : [entry.gamePlayerId && `Game ID ${entry.gamePlayerId}`, entry.platform, entry.contactEmail || entry.player?.email].filter(Boolean).join(" · ")}
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-1.5"><span className={`border px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${chip.style}`}>{chip.text}</span></div>
+                      <div className="mt-5 border-y border-border py-3 text-xs text-muted-foreground"><span className="block text-[9px] font-bold uppercase tracking-wider">Registered</span>{new Date(entry.createdAt).toLocaleDateString()}</div>
+                    </div>
+
+                    {active && (
+                      <div className="mt-5 flex flex-wrap gap-2">
+                        {action && <button disabled={busy} onClick={action.run} className="h-11 flex-1 border border-border bg-background px-3 text-xs font-bold uppercase tracking-wide text-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-40">{action.label}</button>}
+                        {entry.paymentStatus === "unpaid" && entry.status !== "disqualified" && (
+                          <button disabled={busy} onClick={() => recordPayment(entry)} title="Record a fee paid off-site" className="flex h-11 flex-1 items-center justify-center gap-2 border border-primary/40 bg-primary/10 px-3 text-xs font-bold uppercase tracking-wide text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"><Wallet className="h-4 w-4" />Mark paid</button>
+                        )}
+                        {entry.status !== "disqualified" && (
+                          <button disabled={busy} onClick={() => setToDisqualify(entry)} title="Disqualify" aria-label={`Disqualify ${entryName(entry)}`} className="flex h-11 w-11 items-center justify-center border border-border bg-background text-muted-foreground transition-colors hover:border-destructive hover:bg-destructive/5 hover:text-destructive disabled:opacity-40"><Ban className="h-4 w-4" /></button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="border border-dashed border-border bg-card px-6 py-16 text-center">
+              <Users className="mx-auto h-8 w-8 text-primary" />
+              <h3 className="mt-4 font-semibold">{entries.length ? "No entries in this view" : `No ${noun}s entered yet`}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{entries.length ? "Change the filter or search." : `${mode === "Team" ? "Teams" : "Players"} appear here when they register, or when you add them.`}</p>
+            </div>
+          )}
+        </>
       )}
 
-      {/* ─── SAFETY DIALOG: DELETION CONFIRMATION DIALOG ─── */}
-      {isDeleteAlertOpen && selectedTeam && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#0f141c] border border-rose-950/50 w-full max-w-sm rounded-xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-100">
-            <div className="p-6 space-y-4 text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20">
-                <Trash2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-white mb-1">Remove Tournament Team?</h4>
-                <p className="text-sm text-slate-400">Are you sure you want to remove <span className="text-rose-400 font-bold">{selectedTeam.name}</span>? Match score pipelines will lose this identifier reference record.</p>
-              </div>
-            </div>
-            <div className="px-6 py-4 bg-[#141923] border-t border-[#2a2e42] flex gap-3">
-              <button onClick={() => setIsDeleteAlertOpen(false)} className="flex-1 py-2 bg-[#222532] border border-[#2a2e42] text-xs font-bold text-slate-300 rounded-lg hover:text-white">Cancel</button>
-              <button onClick={handleDeleteConfirm} className="flex-1 py-2 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-500 transition-colors">Confirm Deletion</button>
-            </div>
-          </div>
-        </div>
+      {adding && base && (
+        <AddEntryDialog
+          mode={mode}
+          entityType={entityType}
+          entryType={entryType}
+          onClose={() => setAdding(false)}
+          onAdd={async (id) => {
+            await api.post(base, mode === "Team" ? { teamId: id } : { userId: id });
+            toast({ title: `${mode === "Team" ? "Team" : "Player"} entered` });
+            setAdding(false);
+            await loadEntries();
+          }}
+        />
       )}
 
+      <AlertDialog open={Boolean(toDisqualify)} onOpenChange={(open) => !open && setToDisqualify(null)}>
+        <AlertDialogContent className="rounded-sm border-border bg-card text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disqualify {toDisqualify && entryName(toDisqualify)}?</AlertDialogTitle>
+            <AlertDialogDescription>They lose their place in the {entityType.toLowerCase()} and their seat opens up. You can reinstate them later if a seat is free.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-sm">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => toDisqualify && setStatus(toDisqualify, "disqualified", "disqualified")} className="rounded-sm bg-destructive text-destructive-foreground hover:bg-destructive/90">Disqualify</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
+
+type Candidate = { id: string; title: string; detail: string };
+
+function AddEntryDialog({ mode, entityType, entryType, onClose, onAdd }: {
+  mode: "Player" | "Team";
+  entityType: "Tournament" | "League";
+  entryType: "Free" | "Paid";
+  onClose: () => void;
+  onAdd: (id: string) => Promise<void>;
+}) {
+  const [query, setQuery] = useState("");
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState("");
+  const [addingId, setAddingId] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const timer = window.setTimeout(async () => {
+      setSearching(true);
+      try {
+        const q = encodeURIComponent(query.trim());
+        const found: Candidate[] = mode === "Team"
+          ? (await api.get<{ teams: ApiTeam[] }>(`/admin/teams?limit=20&q=${q}`)).teams.map((team) => ({
+              id: team.id,
+              title: team.name,
+              detail: [`${team.size} on roster`, team.captain && `Captain ${team.captain.ign}`, team.region].filter(Boolean).join(" · "),
+            }))
+          : (await api.get<{ users: AdminUser[] }>(`/admin/users?limit=20&q=${q}`)).users
+              .filter((user) => user.status === "active")
+              .map((user) => ({ id: user.id, title: user.ign, detail: [user.fullName || user.name, user.email].filter(Boolean).join(" · ") }));
+        if (active) { setCandidates(found); setError(""); }
+      } catch (err) {
+        if (active) setError((err as Error).message);
+      } finally {
+        if (active) setSearching(false);
+      }
+    }, SEARCH_DELAY_MS);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [mode, query]);
+
+  const add = async (candidate: Candidate) => {
+    setAddingId(candidate.id);
+    try {
+      await onAdd(candidate.id);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setAddingId("");
+    }
+  };
+
+  const noun = mode === "Team" ? "team" : "player";
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={`Add a ${noun}`}>
+      <div className="flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-sm border border-border bg-card shadow-2xl animate-in zoom-in-95 duration-150">
+        <div className="flex items-start justify-between border-b border-border px-6 py-5">
+          <div>
+            <p className="sca-eyebrow mb-1">Registration</p>
+            <h3 className="text-2xl font-semibold tracking-tight text-foreground">Add a {noun}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Enter an existing {noun} on staff authority. The registration window doesn't apply, but capacity does.
+              {entryType === "Paid" && " The entry waits as pending until its fee is recorded."}
+            </p>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="border-b border-border p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder={mode === "Team" ? "Search teams by name..." : "Search players by IGN, email, or name..."} className="w-full rounded-sm border border-input bg-background py-3 pl-9 pr-4 text-sm text-foreground outline-none focus:border-primary" />
+          </div>
+          {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
+        </div>
+        <div className="min-h-40 flex-1 overflow-y-auto p-2">
+          {candidates.map((candidate) => (
+            <div key={candidate.id} className="flex items-center justify-between gap-4 rounded-sm px-4 py-3 hover:bg-secondary/60">
+              <div className="min-w-0">
+                <p className="truncate font-semibold text-foreground">{candidate.title}</p>
+                <p className="truncate text-xs text-muted-foreground">{candidate.detail}</p>
+              </div>
+              <button disabled={Boolean(addingId)} onClick={() => add(candidate)} className="shrink-0 rounded-sm border border-border px-4 py-2 text-xs font-bold uppercase tracking-wide text-foreground hover:border-primary hover:text-primary disabled:opacity-40">
+                {addingId === candidate.id ? "Adding…" : `Enter ${noun}`}
+              </button>
+            </div>
+          ))}
+          {!candidates.length && (
+            <p className="py-10 text-center text-sm text-muted-foreground">{searching ? "Searching…" : `No ${noun}s match. ${entityType === "League" || mode === "Team" ? "Only active teams can be entered." : ""}`}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

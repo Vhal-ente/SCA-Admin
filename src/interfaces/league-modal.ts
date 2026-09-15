@@ -1,5 +1,7 @@
+import type { WatchLinks } from "@/lib/api";
+
 export interface League {
-  id?: number;
+  id?: string;
   name: string;
   game: string;
   status: "Active" | "Upcoming" | "Completed";
@@ -18,12 +20,8 @@ export interface League {
   registrationStatus?: "Scheduled" | "Open" | "Closed";
   registrationOpensAt?: string;
   registrationClosesAt?: string;
-}
-
-export interface LeagueModalProps {
-  // onOpenChange: (open: boolean) => void;
-  league: League | null;
-  onSave: (data: League) => void;
-  onBack: () => void;
+  watchLinks?: WatchLinks;
+  // The API's own status, kept so a save only sends a status the console changed.
+  apiStatus?: string;
 }
 

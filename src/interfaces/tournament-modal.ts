@@ -1,5 +1,7 @@
+import type { WatchLinks } from "@/lib/api";
+
 export interface Tournament {
-  id: number;
+  id: string;
   name: string;
   game: string;
   status: "Active" | "Upcoming" | "Completed";
@@ -19,11 +21,16 @@ export interface Tournament {
   registrationStatus?: "Scheduled" | "Open" | "Closed";
   registrationOpensAt?: string;
   registrationClosesAt?: string;
+  watchLinks?: WatchLinks;
+  apiStatus?: string;
 }
 
 export interface TournamentModalProps {
   tournament: Tournament | null;
-  onSave: (tournamentData: Omit<Tournament, "id"> & { id?: number }) => void;
+  // Resolves false when the save failed, so the workspace keeps its edits unconfirmed.
+  onSave: (tournamentData: Omit<Tournament, "id"> & { id?: string }) => void | Promise<boolean | void>;
+  // Watch links save on their own, without the rest of the form.
+  onSaveWatchLinks?: (links: WatchLinks) => Promise<void>;
   onBack: () => void;
 }
 

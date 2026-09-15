@@ -1,24 +1,26 @@
 import { ReactNode, useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { 
-  Home, 
-  Trophy, 
-  Users, 
-  Settings, 
-  DollarSign, 
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Home,
+  Trophy,
+  Users,
+  Settings,
+  DollarSign,
   Newspaper,
   Files,
   Shield,
   Award,
   Menu,
   Moon,
-  Sun
+  Sun,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import scaLogo from "../../public/sca_white.png";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/context/AuthContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -81,6 +83,41 @@ const NavContent = ({ onItemClick }: { onItemClick?: () => void }) => {
   );
 };
 
+const AccountPanel = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
+
+  const signOut = async () => {
+    setSigningOut(true);
+    try {
+      await logout();
+    } finally {
+      navigate("/login", { replace: true });
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-sm border border-sidebar-border px-4 py-3">
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold text-foreground">{user?.name || user?.ign}</p>
+        <p className="truncate text-xs text-sidebar-foreground">{user?.email}</p>
+      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={signOut}
+        disabled={signingOut}
+        aria-label="Sign out"
+        title="Sign out"
+        className="shrink-0 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive"
+      >
+        <LogOut className="w-5 h-5" />
+      </Button>
+    </div>
+  );
+};
+
 export const Layout = ({ children }: LayoutProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -108,8 +145,11 @@ export const Layout = ({ children }: LayoutProps) => {
               <Menu className="w-6 h-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 bg-sidebar border-sidebar-border">
+          <SheetContent side="left" className="flex w-72 flex-col p-0 bg-sidebar border-sidebar-border">
             <NavContent onItemClick={() => setMobileMenuOpen(false)} />
+            <div className="border-t border-sidebar-border p-4">
+              <AccountPanel />
+            </div>
           </SheetContent>
           </Sheet>
         </div>
@@ -118,7 +158,8 @@ export const Layout = ({ children }: LayoutProps) => {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-64 bg-sidebar border-r border-sidebar-border flex-col fixed h-full">
         <NavContent />
-        <div className="border-t border-sidebar-border p-4">
+        <div className="space-y-3 border-t border-sidebar-border p-4">
+          <AccountPanel />
           <button
             type="button"
             onClick={toggleTheme}

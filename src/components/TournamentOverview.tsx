@@ -18,6 +18,7 @@ import TournamentStandings from "./TournamentStanding";
 import MatchTab, { type StructureType } from "./TournamentMatch";
 import WatchTab from "./TournamentWatch";
 import ScheduleTab from "./TournamentSchedule";
+import { emptyWatchLinks } from "@/lib/competitions";
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ function Button({ label, variant = "primary", onClick }: { label: string; varian
 export const Overview = ({
   tournament,
   onSave,
+  onSaveWatchLinks,
   onBack,
   entityType = "Tournament",
 }: TournamentModalProps & { entityType?: "Tournament" | "League" }) => {
@@ -80,6 +82,7 @@ export const Overview = ({
   );
   const [registrationOpensAt, setRegistrationOpensAt] = useState(tournament?.registrationOpensAt || "");
   const [registrationClosesAt, setRegistrationClosesAt] = useState(tournament?.registrationClosesAt || "");
+  const [watchLinks, setWatchLinks] = useState(tournament?.watchLinks || emptyWatchLinks());
   const [lastSavedLabel, setLastSavedLabel] = useState("");
   const [tournamentStructure, setTournamentStructure] = useState<StructureType | null>(null);
 
@@ -100,9 +103,12 @@ export const Overview = ({
       setRegistrationStatus(tournament.registrationStatus || (tournament.status === "Active" ? "Open" : "Scheduled"));
       setRegistrationOpensAt(tournament.registrationOpensAt || "");
       setRegistrationClosesAt(tournament.registrationClosesAt || "");
-      setLastSavedLabel("");
+      setWatchLinks(tournament.watchLinks || emptyWatchLinks());
     }
   }, [tournament, entityType]);
+
+  // A save hands back the stored record; only a different competition clears the save note.
+  useEffect(() => setLastSavedLabel(""), [tournament?.id]);
 
   useEffect(() => {
     const applyRegistrationTimeline = () => {
@@ -124,8 +130,8 @@ export const Overview = ({
     return () => window.clearInterval(timer);
   }, [registrationClosesAt, registrationOpensAt, registrationStatus]);
 
-  const saveTournament = (nextPublicationStatus: "Draft" | "Published") => {
-    onSave({
+  const saveTournament = async (nextPublicationStatus: "Draft" | "Published") => {
+    const saved = await onSave({
       ...tournament,
       name: tournamentName,
       game,
@@ -143,6 +149,7 @@ export const Overview = ({
       registrationOpensAt: registrationOpensAt || undefined,
       registrationClosesAt: registrationClosesAt || undefined,
     });
+    if (saved === false) return;
     setPublicationStatus(nextPublicationStatus);
     setLastSavedLabel(
       nextPublicationStatus === "Published"
@@ -509,8 +516,28 @@ export const Overview = ({
       )}
 
       {/* --- RELATIONAL ROUTED TAB MODULE SUB-VIEWS --- */}
-      {activeTab === "PARTICIPANTS" && <TeamsTab activeTab={activeTab} mode={mode} entryType={tournament?.entryType || "Free"} entryFee={tournament?.entryFee || ""} playerPhase={tournamentPhase} setPlayerPhase={setTournamentPhase} />}
-      {activeTab === "WATCH" && <WatchTab activeTab={activeTab} />}
+      {activeTab === "PARTICIPANTS" && (
+        <TeamsTab
+          activeTab={activeTab}
+          entityType={entityType}
+          competitionId={tournament?.id}
+          capacity={tournament?.teams}
+          mode={mode}
+          entryType={tournament?.entryType || "Free"}
+          entryFee={tournament?.entryFee || ""}
+          playerPhase={tournamentPhase}
+          setPlayerPhase={setTournamentPhase}
+        />
+      )}
+      {activeTab === "WATCH" && (
+        <WatchTab
+          activeTab={activeTab}
+          entityLabel={entityLabel}
+          links={watchLinks}
+          onChange={setWatchLinks}
+          onSave={tournament?.id ? onSaveWatchLinks : undefined}
+        />
+      )}
       {activeTab === "SCHEDULE" && <ScheduleTab activeTab={activeTab} />}
       {activeTab === "SETTINGS" && <SettingsTab activeTab={activeTab} />}
       {activeTab === "STANDINGS" && <TournamentStandings activeTab={activeTab} mode={mode} tournamentPhase={tournamentPhase} structureType={tournamentStructure} />}

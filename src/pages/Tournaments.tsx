@@ -7,7 +7,7 @@ import { TournamentModal, Tournament } from "@/components/TournamentModal";
 import { Overview } from "@/components/TournamentOverview";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "react-router-dom";
-import { api, type ApiTournament } from "@/lib/api";
+import { api, type ApiTournament, type WatchLinks } from "@/lib/api";
 import { toTournamentPayload, toUiTournament } from "@/lib/competitions";
 import {
   AlertDialog,
@@ -57,7 +57,7 @@ const Tournaments = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const tournamentId = (location.state as { tournamentId?: number } | null)?.tournamentId;
+    const tournamentId = (location.state as { tournamentId?: string } | null)?.tournamentId;
     const tournament = tournaments.find((item) => item.id === tournamentId);
 
     if (tournament) {
@@ -110,18 +110,26 @@ const Tournaments = () => {
 const handleSaveTournament = async (tournamentData: Partial<Tournament> & { id?: string }) => {
   const payload = toTournamentPayload(tournamentData);
   try {
-    if (tournamentData.id) {
-      await api.patch(`/admin/tournaments/${tournamentData.id}`, payload);
-      toast({ title: "Updated successfully" });
-    } else {
-      await api.post("/admin/tournaments", payload);
-      toast({ title: "Created successfully" });
-    }
+    const { tournament: saved } = tournamentData.id
+      ? await api.patch<{ tournament: ApiTournament }>(`/admin/tournaments/${tournamentData.id}`, payload)
+      : await api.post<{ tournament: ApiTournament }>("/admin/tournaments", payload);
+    toast({ title: tournamentData.id ? "Updated successfully" : "Created successfully" });
+    // The workspace carries on from the stored record, so its next save compares
+    // against what the server now holds.
+    if (isViewingOverview) setSelectedTournament(toUiTournament(saved));
     await loadTournaments();
     setModalOpen(false);
+    return true;
   } catch (error) {
     toast({ title: "Could not save", description: (error as Error).message, variant: "destructive" });
+    return false;
   }
+};
+
+const saveWatchLinks = async (links: WatchLinks) => {
+  if (!selectedTournament) return;
+  await api.patch(`/admin/tournaments/${selectedTournament.id}`, { watchLinks: links });
+  await loadTournaments();
 };
 
 // Publishing is what makes a competition visible on the public site.
@@ -151,6 +159,7 @@ const togglePublication = async (tournament: Tournament) => {
       <Overview
         tournament={selectedTournament}
         onSave={handleSaveTournament}
+        onSaveWatchLinks={saveWatchLinks}
         onBack={handleBack}
       />
     );
