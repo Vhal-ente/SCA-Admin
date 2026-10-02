@@ -22,6 +22,8 @@ export interface Tournament {
   registrationOpensAt?: string;
   registrationClosesAt?: string;
   watchLinks?: WatchLinks;
+  // single_elimination or round_robin once fixtures are generated.
+  fixtureStructure?: string;
   apiStatus?: string;
 }
 

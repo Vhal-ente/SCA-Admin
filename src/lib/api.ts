@@ -94,6 +94,8 @@ export type ApiWorkspace = {
   registrationClosesAt: string;
   prizeAllocations: number[];
   watchLinks: WatchLinks;
+  // single_elimination, round_robin, or "" before fixtures are generated.
+  fixtureStructure: string;
 };
 
 export type EntryStatus = "pending" | "confirmed" | "waitlisted" | "disqualified" | "withdrawn";
@@ -127,4 +129,38 @@ export type ApiTeam = {
   size: number;
   captain: EntryPerson | null;
   createdAt: string;
+};
+
+export type FixtureStructure = "single_elimination" | "round_robin";
+
+// A team, or a player in a solo tournament.
+export type FixtureEntrant = { id: string; name: string; logoUrl: string };
+
+export type ApiFixture = {
+  id: string;
+  round: string;
+  roundNumber: number;
+  // Position within the round; a bracket's byes leave gaps.
+  matchNumber: number;
+  scheduledAt: string;
+  venue: string;
+  streamUrl: string;
+  bestOf: number;
+  status: string;
+  // Null until a bracket winner fills the place.
+  home: FixtureEntrant | null;
+  away: FixtureEntrant | null;
+  homeScore: number | null;
+  awayScore: number | null;
+  winnerId: string;
+  verified: boolean;
+  // The bracket match the winner moves on to, and on which side.
+  nextMatchId: string;
+  nextMatchSlot: "home" | "away" | "";
+};
+
+export type ApiFixtures = {
+  structure: FixtureStructure | "";
+  bestOf: number;
+  fixtures: ApiFixture[];
 };

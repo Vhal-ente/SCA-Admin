@@ -1,6 +1,7 @@
 import type { ApiTournament, ApiLeague, ApiWorkspace, WatchLinks } from "@/lib/api";
 import type { Tournament } from "@/components/TournamentModal";
 import type { League } from "@/interfaces/league-modal";
+import type { StructureType } from "@/components/TournamentMatch";
 
 type Bucket = "Active" | "Upcoming" | "Completed";
 type Registration = "Scheduled" | "Open" | "Closed";
@@ -60,6 +61,7 @@ const toUiWorkspace = (item: ApiWorkspace) => ({
   // An unset split falls back to the workspace default.
   prizeAllocations: item.prizeAllocations?.length ? item.prizeAllocations : undefined,
   watchLinks: item.watchLinks || emptyWatchLinks(),
+  fixtureStructure: item.fixtureStructure || "",
 });
 
 // An empty date is sent as "" so clearing it in the workspace clears it on the server.
@@ -144,3 +146,7 @@ export const toLeaguePayload = (item: Partial<League>) => ({
   publicationStatus: item.publicationStatus === "Published" ? "published" : "draft",
   ...toWorkspacePayload(item),
 });
+
+// The API names the structures it generates; the console shows their labels.
+export const structureLabel = (structure?: string): StructureType | null =>
+  structure === "single_elimination" ? "Single elimination" : structure === "round_robin" ? "Round robin" : null;
