@@ -127,6 +127,7 @@ export type ApiTeam = {
   logoUrl: string;
   region: string;
   verified: boolean;
+  status: "active" | "inactive" | "disbanded" | "suspended";
   size: number;
   captain: EntryPerson | null;
   createdAt: string;

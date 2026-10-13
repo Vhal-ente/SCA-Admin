@@ -4,45 +4,26 @@ import {
   MoreVertical,
   Shield,
   Edit,
-  Trash2,
-  Search,
-  Filter
+  Trash2
 } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import UserActionModals from "@/components/modals/UserActionModals";
 import { PlayerDirectory } from "@/components/PlayerDirectory";
+import { TeamDirectory } from "@/components/TeamDirectory";
 import ReportsDesk from "@/components/ReportsDesk";
 
 type ModalType = "edit-player" | "add-admin" | "edit-team" | "delete" | null;
 
 // Mock Datasets with matching interface structures
-const INITIAL_TEAMS = [
-  { id: '1', name: 'Neon Vipers', founded: 'Jan 2023', region: 'North America', rank: 'DIAMOND IV', status: 'VERIFIED' },
-  { id: '2', name: 'Cyber Sentinels', founded: 'Nov 2022', region: 'Europe West', rank: 'GRANDMASTER', status: 'VERIFIED' },
-  { id: '3', name: 'Redux Phoenix', founded: 'Mar 2024', region: 'Asia Pacific', rank: 'PLATINUM II', status: 'PENDING' },
-  { id: '4', name: 'Zero Gravity', founded: 'Dec 2022', region: 'South America', rank: 'UNRANKED', status: 'SUSPENDED' },
-];
-
 const INITIAL_ADMINS = [
   { id: "admin-1", name: "Amina Bello", email: "amina@sca.gg", role: "Super Admin", type: "super", status: "Active" },
   { id: "admin-2", name: "Daniel Cole", email: "daniel@sca.gg", role: "Moderator", type: "mod", status: "Active" },
@@ -59,10 +40,6 @@ const Users = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("players");
 
-  // Filter and Pagination Tracking hooks
-  const [teamSearch, setTeamSearch] = useState("");
-  const [teamPage, setTeamPage] = useState(1);
-
   // Modal Orchestration State Hooks
   const [modalType, setModalType] = useState<ModalType>(null);
   const [selectedItemContext, setSelectedItemContext] = useState<any>(null);
@@ -71,16 +48,6 @@ const Users = () => {
     setSelectedItemContext(context);
     setModalType(type);
   };
-
-  // --- Teams Filtering & Pagination Engine ---
-  const filteredTeams = INITIAL_TEAMS.filter((team) => 
-    team.name.toLowerCase().includes(teamSearch.toLowerCase()) || team.region.toLowerCase().includes(teamSearch.toLowerCase())
-  );
-
-  const totalTeamPages = Math.ceil(filteredTeams.length / ITEMS_PER_PAGE) || 1;
-  const teamStartIdx = filteredTeams.length > 0 ? (teamPage - 1) * ITEMS_PER_PAGE + 1 : 0;
-  const teamEndIdx = Math.min(teamPage * ITEMS_PER_PAGE, filteredTeams.length);
-  const visibleTeams = filteredTeams.slice((teamPage - 1) * ITEMS_PER_PAGE, teamPage * ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-background p-5 text-foreground md:p-8 lg:p-10">
@@ -123,146 +90,7 @@ const Users = () => {
 
         {/* --- TEAMS PANEL TAB INTERFACE --- */}
         <TabsContent value="teams" className="space-y-6 outline-none focus:outline-none">
-          <div className="flex flex-col items-start justify-between gap-4 border-b border-border pb-5 md:flex-row md:items-end">
-            <div>
-              <p className="sca-eyebrow mb-2">Organizations</p>
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">Team directory</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Manage organizations, regional rankings, and tournament eligibility.</p>
-            </div>
-            <div className="flex items-center space-x-2 w-full md:w-auto">
-              <div className="relative flex-1 md:w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input 
-                  value={teamSearch}
-                  onChange={(e) => { setTeamSearch(e.target.value); setTeamPage(1); }}
-                  placeholder="Search team names..." 
-                  className="h-11 w-full rounded-sm border-border bg-card pl-10 text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary"
-                />
-              </div>
-              <Button variant="outline" className="flex h-11 items-center space-x-1.5 rounded-sm border-border bg-card px-4 text-xs font-bold text-muted-foreground hover:bg-secondary hover:text-foreground">
-                <Filter className="w-3.5 h-3.5" />
-                <span className="uppercase text-[10px] tracking-widest font-black">Filters</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Directory Overview Matrix Cards */}
-          <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { label: 'Active Teams', count: '1,248' },
-              { label: 'Global Regions', count: '06' },
-              { label: 'New Registrations', count: '42', sub: 'THIS WEEK' },
-              { label: 'Disqualified', count: '03' }
-            ].map((item, index) => (
-              <div key={index} className="flex h-28 flex-col justify-between rounded-sm border border-border bg-card p-5">
-                <div>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
-                  <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{item.count}</p>
-                </div>
-                {item.sub && <span className="text-[8px] font-black tracking-wider text-primary">{item.sub}</span>}
-              </div>
-            ))}
-          </section>
-
-          {/* Main Table Grid Card */}
-          <div className="flex flex-col space-y-4 overflow-x-auto rounded-sm border border-border bg-card p-5">
-            <Table className="w-full text-left text-xs border-collapse min-w-[650px]">
-              <TableHeader>
-                <TableRow className="border-b border-border bg-secondary/50 hover:bg-secondary/50">
-                  <TableHead className="pb-3 text-muted-foreground uppercase tracking-wider text-[9px] font-bold">Team Name</TableHead>
-                  <TableHead className="pb-3 text-muted-foreground uppercase tracking-wider text-[9px] font-bold">Region</TableHead>
-                  <TableHead className="pb-3 text-muted-foreground uppercase tracking-wider text-[9px] font-bold">Rank</TableHead>
-                  <TableHead className="pb-3 text-muted-foreground uppercase tracking-wider text-[9px] font-bold">Status</TableHead>
-                  <TableHead className="pb-3 text-right text-muted-foreground uppercase tracking-wider text-[9px] font-bold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="divide-y divide-border font-medium">
-                {visibleTeams.length > 0 ? (
-                  visibleTeams.map((team) => (
-                    <TableRow key={team.id} className="border-b border-border transition-colors hover:bg-secondary/50 group">
-                      <td className="py-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="flex h-9 w-9 items-center justify-center border border-border bg-primary/10 text-xs font-black text-primary">{team.name.slice(0, 2).toUpperCase()}</div>
-                          <div>
-                            <div className="font-bold text-foreground transition-colors group-hover:text-primary">{team.name}</div>
-                            <div className="mt-0.5 text-[9px] text-muted-foreground">Founded: {team.founded}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 font-semibold text-muted-foreground">{team.region}</td>
-                      <td className="py-4">
-                        <span className="text-[10px] font-black font-mono tracking-tight text-cyan-400 bg-cyan-950/30 px-2 py-0.5 rounded border border-cyan-500/20">
-                          {team.rank}
-                        </span>
-                      </td>
-                      <td className="py-4">
-                        <span className={`inline-flex items-center space-x-1 text-[8px] font-black tracking-widest px-2 py-0.5 rounded-full ${
-                          team.status === 'VERIFIED' ? 'bg-emerald-500/10 text-primary' :
-                          team.status === 'PENDING' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-rose-500/10 text-rose-400'
-                        }`}>
-                          <span>●</span> <span>{team.status}</span>
-                        </span>
-                      </td>
-                      <td className="py-4 text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-9 w-9 rounded-sm p-0 text-muted-foreground hover:bg-secondary hover:text-foreground">
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-sm border-border bg-popover text-popover-foreground">
-                            <DropdownMenuItem onClick={() => triggerModal("edit-team", team)} className="cursor-pointer focus:bg-secondary focus:text-foreground"><Edit className="w-4 h-4 mr-2" /> Edit records</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <td colSpan={5} className="py-8 text-center text-muted-foreground">No teams match these filters.</td>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-
-            {/* --- SHADCN INTEGRATED TEAMS FOOTER PAGINATION --- */}
-            <div className="flex flex-col items-center justify-between gap-4 border-t border-border pt-4 text-[10px] font-bold text-muted-foreground sm:flex-row">
-              <span>Showing {teamStartIdx}-{teamEndIdx} of {filteredTeams.length} teams</span>
-              
-              <Pagination className="mx-0 w-auto">
-                <PaginationContent className="gap-1">
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      href="#" 
-                      onClick={(e) => { e.preventDefault(); if (teamPage > 1) setTeamPage(teamPage - 1); }}
-                      className={teamPage === 1 ? "opacity-40 pointer-events-none" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-
-                  {Array.from({ length: totalTeamPages }, (_, i) => i + 1).map((p) => (
-                    <PaginationItem key={p}>
-                      <PaginationLink 
-                        href="#" 
-                        isActive={p === teamPage} 
-                        onClick={(e) => { e.preventDefault(); setTeamPage(p); }}
-                          className={`rounded-sm px-2 py-0.5 text-[11px] font-mono font-bold ${p === teamPage ? "bg-primary text-primary-foreground" : "border border-border bg-background text-muted-foreground hover:text-foreground"}`}
-                      >
-                        {p}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-
-                  <PaginationItem>
-                    <PaginationNext 
-                      href="#" 
-                      onClick={(e) => { e.preventDefault(); if (teamPage < totalTeamPages) setTeamPage(teamPage + 1); }}
-                      className={teamPage === totalTeamPages ? "opacity-40 pointer-events-none" : "cursor-pointer"}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          </div>
+          <TeamDirectory />
         </TabsContent>
 
         {/* --- ADMINS PANEL TAB PANEL --- */}
