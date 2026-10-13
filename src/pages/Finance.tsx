@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowDownLeft, ArrowLeft, ArrowUpRight, BellRing, CheckCircle2, Clock3,
   Download, RotateCcw, ShieldAlert, UserRoundCheck, WalletCards,
 } from "lucide-react";
 import TransactionsTab from "@/components/Transactions";
-import RefundsTab, { initialRefunds, type RefundRequest } from "@/components/Refunds";
+import RefundsTab, { type RefundRequest, type RefundStatus } from "@/components/Refunds";
+import { api, type ApiRefund } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type SubTab = "overview" | "prizes" | "refunds" | "transactions";
 type CompetitionType = "Tournament" | "League";
@@ -30,11 +32,38 @@ const initialSettlements: Settlement[] = [
   ]},
 ];
 
+const STATUS_LABEL: Record<ApiRefund["status"], RefundStatus> = {
+  requested: "Requested", under_review: "Under Review", approved: "Approved", rejected: "Rejected",
+  processing: "Processing", refunded: "Refunded", failed: "Failed", cancelled: "Cancelled",
+};
+
+const toRefundRequest = (refund: ApiRefund): RefundRequest => ({
+  id: refund.id, reference: refund.reference, user: refund.payer?.ign || "Removed account", email: refund.payer?.email || "",
+  competition: refund.payment?.serviceName || "—",
+  type: refund.payment?.serviceType === "tournament" ? "Tournament" : refund.payment?.serviceType === "league" ? "League" : "Service",
+  provider: refund.payment?.provider || "", currency: refund.payment?.currency || "NGN",
+  originalAmount: refund.payment?.amount ?? 0, refundedAmount: refund.payment?.refundedAmount ?? 0,
+  requestedAmount: refund.approvedAmount ?? refund.amountRequested, paymentRef: refund.payment?.reference || "",
+  reason: refund.reason, status: STATUS_LABEL[refund.status], requestedAt: refund.requestedAt.slice(0, 10),
+  providerRef: refund.providerReference || undefined,
+  audit: refund.events.map(event => `${event.note || event.status.replace(/_/g, " ")} • ${new Date(event.at).toLocaleString("en-NG")}`),
+});
+
 const money = (value: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(value);
 
 export default function Finance() {
   const [activeTab, setActiveTab] = useState<SubTab>("overview");
-  const [refunds, setRefunds] = useState<RefundRequest[]>(initialRefunds);
+  const { toast } = useToast();
+  const [refunds, setRefunds] = useState<RefundRequest[]>([]);
+  const loadRefunds = useCallback(async () => {
+    try {
+      const { refunds: list } = await api.get<{ refunds: ApiRefund[] }>("/admin/refunds");
+      setRefunds(list.map(toRefundRequest));
+    } catch (error) {
+      toast({ title: "Could not load refunds", description: (error as Error).message, variant: "destructive" });
+    }
+  }, [toast]);
+  useEffect(() => { loadRefunds(); }, [loadRefunds]);
   const [settlements, setSettlements] = useState(initialSettlements);
   const [filter, setFilter] = useState<"All" | CompetitionType>("All");
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -71,6 +100,6 @@ export default function Finance() {
       {!selected ? <section className="grid gap-5 xl:grid-cols-[1.5fr_.7fr]"><article className="border border-border bg-card"><div className="flex flex-col gap-4 border-b border-border p-6 md:flex-row md:items-center md:justify-between"><div><p className="sca-eyebrow mb-2">Prize disbursement</p><h2 className="text-2xl font-semibold">Settlements by competition</h2><p className="mt-1 text-sm text-muted-foreground">Select a tournament or league to inspect its winners and approve payouts.</p></div><div className="flex gap-2">{(["All", "Tournament", "League"] as const).map(value => <button key={value} onClick={() => setFilter(value)} className={`border px-4 py-2 text-[10px] font-bold uppercase tracking-wider ${filter === value ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground"}`}>{value}</button>)}</div></div><div className="divide-y divide-border">{filtered.map(row => <button key={row.id} onClick={() => setSelectedId(row.id)} className="grid w-full gap-3 p-5 text-left transition-colors hover:bg-secondary/30 md:grid-cols-[1.5fr_.7fr_.7fr_.7fr_auto] md:items-center"><div><p className="font-bold">{row.name}</p><p className="mt-1 text-xs text-muted-foreground">{row.type} · {row.participants}</p></div><p className="text-sm font-bold text-primary">{money(row.pool)}</p><p className="text-sm text-muted-foreground">{row.winners.length} winners</p><p className="text-sm text-muted-foreground">{row.payout}</p><span className="border border-primary/30 px-3 py-1 text-[9px] font-bold uppercase text-primary">Review</span></button>)}</div></article>
       <aside className="border border-border bg-card p-6"><p className="sca-eyebrow mb-2">Approval policy</p><h2 className="text-2xl font-semibold">Manual control</h2><div className="mt-6 space-y-4 text-sm text-muted-foreground"><p className="flex gap-3"><UserRoundCheck className="h-5 w-5 shrink-0 text-primary" />Only a Super Admin can approve or settle prize payments.</p><p className="flex gap-3"><ShieldAlert className="h-5 w-5 shrink-0 text-amber-500" />Disqualification records remain visible for audit purposes.</p><p className="flex gap-3"><WalletCards className="h-5 w-5 shrink-0 text-primary" />Account details are reviewed before settlement.</p></div></aside></section> : <section className="border border-border bg-card"><div className="flex flex-col gap-5 border-b border-border p-6 md:flex-row md:items-center md:justify-between"><div><button onClick={() => { setSelectedId(null); setNotice(""); }} className="mb-4 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-primary"><ArrowLeft className="h-4 w-4" /> Back to settlements</button><p className="sca-eyebrow mb-2">{selected.type} settlement</p><h2 className="text-2xl font-semibold">{selected.name}</h2><p className="mt-2 text-sm text-muted-foreground">{money(selected.pool)} prize pool · payout target {selected.payout}</p></div><div className="border border-primary/30 bg-primary/5 px-4 py-3 text-xs font-semibold text-primary">Super Admin authorization</div></div>{notice && <p className="border-b border-primary/20 bg-primary/5 px-6 py-3 text-sm text-primary">{notice}</p>}<div className="divide-y divide-border">{selected.winners.map(winner => <article key={winner.id} className="grid gap-5 p-6 xl:grid-cols-[90px_1.3fr_1fr_.7fr] xl:items-start"><div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Position</p><p className="mt-2 text-3xl font-semibold text-primary">#{winner.place}</p></div><div><h3 className="text-lg font-bold">{winner.name}</h3><p className="mt-1 text-sm text-muted-foreground">{winner.email}</p><p className="mt-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Bank account</p><p className="mt-1 text-sm">{winner.accountNumber ? `${winner.bank} · ${winner.accountNumber}` : "No payout account supplied"}</p><button onClick={() => setNotice(`Account update reminder sent to ${winner.email}.`)} className="mt-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary"><BellRing className="h-4 w-4" /> Ping user</button></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Replace winner</p><div className="mt-2 flex"><input value={replacement[winner.id] || ""} onChange={event => setReplacement(values => ({ ...values, [winner.id]: event.target.value }))} placeholder="Replacement player or team" className="h-11 min-w-0 flex-1 border border-border bg-background px-3 text-sm outline-none focus:border-primary"/><button onClick={() => replaceWinner(winner.id)} className="border border-l-0 border-border px-3 text-xs font-bold uppercase hover:text-primary">Change</button></div><button onClick={() => updateWinner(winner.id, "Disqualified")} className="mt-3 text-xs font-bold uppercase tracking-wider text-destructive">Disqualify winner</button></div><div><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Payout</p><p className="mt-2 text-xl font-bold">{money(winner.amount)}</p><span className={`mt-3 inline-block border px-2 py-1 text-[9px] font-bold uppercase ${winner.status === "Paid" ? "border-emerald-500/30 text-emerald-500" : winner.status === "Disqualified" ? "border-destructive/30 text-destructive" : "border-amber-500/30 text-amber-500"}`}>{winner.status}</span><div className="mt-4 grid gap-2"><button disabled={!winner.accountNumber || winner.status === "Disqualified" || winner.status === "Paid"} onClick={() => updateWinner(winner.id, "Approved")} className="h-10 bg-primary px-3 text-xs font-bold uppercase text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40">Approve payment</button><button disabled={winner.status !== "Approved"} onClick={() => updateWinner(winner.id, "Paid")} className="h-10 border border-border px-3 text-xs font-bold uppercase disabled:cursor-not-allowed disabled:opacity-40">Mark settled</button></div></div></article>)}</div></section>}
       <section className="grid gap-4 sm:grid-cols-3"><div className="flex items-center gap-4 border border-border bg-card p-5"><ArrowDownLeft className="h-5 w-5 text-emerald-500"/><div><p className="text-xs text-muted-foreground">Money received</p><p className="font-bold">{money(18720)}</p></div></div><div className="flex items-center gap-4 border border-border bg-card p-5"><ArrowUpRight className="h-5 w-5 text-rose-500"/><div><p className="text-xs text-muted-foreground">Payouts sent</p><p className="font-bold">{money(9840)}</p></div></div><div className="border border-border bg-card p-5"><p className="text-xs text-muted-foreground">Net movement</p><p className="mt-1 text-xl font-bold text-primary">+{money(8880)}</p></div></section>
-    </div>}{activeTab === "refunds" && <RefundsTab items={refunds} setItems={setRefunds} />}{activeTab === "transactions" && <TransactionsTab />}</main>
+    </div>}{activeTab === "refunds" && <RefundsTab items={refunds} onChanged={loadRefunds} />}{activeTab === "transactions" && <TransactionsTab onRefundRequested={loadRefunds} />}</main>
   </div></div>;
 }

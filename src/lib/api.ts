@@ -219,3 +219,39 @@ export type ApiGame = {
 };
 
 export type ApiGamePlayer = { id: string; ign: string; name: string; status: string; teams: string[] };
+
+type Payer = { id: string; ign: string; email: string };
+
+export type ApiPayment = {
+  id: string;
+  reference: string;
+  payer: Payer | null;
+  serviceType: "tournament" | "league" | "other";
+  serviceName: string;
+  amount: number;
+  refundedAmount: number;
+  currency: string;
+  status: "pending" | "paid" | "failed" | "abandoned" | "partially_refunded" | "refunded";
+  provider: string;
+  method: string;
+  paidAt: string;
+  createdAt: string;
+};
+
+export type ApiRefundStatus = "requested" | "under_review" | "approved" | "rejected" | "processing" | "refunded" | "failed" | "cancelled";
+
+export type ApiRefund = {
+  id: string;
+  reference: string;
+  payer: Payer | null;
+  payment: ApiPayment | null;
+  reason: string;
+  amountRequested: number;
+  approvedAmount: number | null;
+  status: ApiRefundStatus;
+  adminNote: string;
+  providerReference: string;
+  requestedAt: string;
+  completedAt: string;
+  events: { status: string; note: string; at: string }[];
+};
