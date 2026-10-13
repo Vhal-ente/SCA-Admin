@@ -40,10 +40,4 @@ export const defaultWebsiteContent: WebsiteContentState = {
   activity: [],
 };
 
-const STORAGE_KEY = "sca-website-content-v1";
-export const loadWebsiteContent = (): WebsiteContentState => {
-  try { const saved = localStorage.getItem(STORAGE_KEY); return saved ? { ...defaultWebsiteContent, ...JSON.parse(saved) } : defaultWebsiteContent; }
-  catch { return defaultWebsiteContent; }
-};
-export const saveWebsiteContent = (state: WebsiteContentState) => localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 export const createId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;

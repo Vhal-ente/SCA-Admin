@@ -37,6 +37,8 @@ export interface Tournament {
   registrationOpensAt?: string;
   registrationClosesAt?: string;
   watchLinks?: WatchLinks;
+  // single_elimination or round_robin once fixtures are generated.
+  fixtureStructure?: string;
   // The API's own status, kept so a save only sends a status the console changed.
   apiStatus?: string;
 }

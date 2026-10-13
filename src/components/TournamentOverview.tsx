@@ -18,7 +18,7 @@ import TournamentStandings from "./TournamentStanding";
 import MatchTab, { type StructureType } from "./TournamentMatch";
 import WatchTab from "./TournamentWatch";
 import ScheduleTab from "./TournamentSchedule";
-import { emptyWatchLinks } from "@/lib/competitions";
+import { emptyWatchLinks, structureLabel } from "@/lib/competitions";
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -84,7 +84,7 @@ export const Overview = ({
   const [registrationClosesAt, setRegistrationClosesAt] = useState(tournament?.registrationClosesAt || "");
   const [watchLinks, setWatchLinks] = useState(tournament?.watchLinks || emptyWatchLinks());
   const [lastSavedLabel, setLastSavedLabel] = useState("");
-  const [tournamentStructure, setTournamentStructure] = useState<StructureType | null>(null);
+  const [tournamentStructure, setTournamentStructure] = useState<StructureType | null>(structureLabel(tournament?.fixtureStructure));
 
   // Keep state sync bounds clear if the active context model profiles shift
   useEffect(() => {
@@ -104,6 +104,7 @@ export const Overview = ({
       setRegistrationOpensAt(tournament.registrationOpensAt || "");
       setRegistrationClosesAt(tournament.registrationClosesAt || "");
       setWatchLinks(tournament.watchLinks || emptyWatchLinks());
+      setTournamentStructure(structureLabel(tournament.fixtureStructure));
     }
   }, [tournament, entityType]);
 
@@ -540,8 +541,8 @@ export const Overview = ({
       )}
       {activeTab === "SCHEDULE" && <ScheduleTab activeTab={activeTab} />}
       {activeTab === "SETTINGS" && <SettingsTab activeTab={activeTab} />}
-      {activeTab === "STANDINGS" && <TournamentStandings activeTab={activeTab} mode={mode} tournamentPhase={tournamentPhase} structureType={tournamentStructure} />}
-      {activeTab === "MATCHES" && <MatchTab activeTab={activeTab} mode={mode} participantCount={tournament?.teams || 16} tournamentPhase={tournamentPhase} onPhaseChange={setTournamentPhase} onStructureGenerated={setTournamentStructure} />}
+      {activeTab === "STANDINGS" && <TournamentStandings activeTab={activeTab} entityType={entityType} competitionId={tournament?.id} mode={mode} structureType={tournamentStructure} />}
+      {activeTab === "MATCHES" && <MatchTab activeTab={activeTab} entityType={entityType} competitionId={tournament?.id} mode={mode} tournamentPhase={tournamentPhase} onPhaseChange={setTournamentPhase} onStructureGenerated={setTournamentStructure} />}
       </div>
     </div>
   );

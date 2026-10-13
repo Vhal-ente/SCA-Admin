@@ -10,55 +10,44 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 export interface Game {
-  id: number;
+  id: string;
+  // Short name shown on cards, e.g. "CODM".
   name: string;
+  // The catalogue name competitions and teams use, e.g. "Call of Duty Mobile".
   fullName: string;
+  // Accounts that list the game on their profile.
   players: number;
   image: string;
+  active: boolean;
 }
 
 interface GameModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   game: Game | null;
-  onSave: (game: Omit<Game, "id"> & { id?: number }) => void;
+  // Resolves false when the save failed, so the form stays open with its edits.
+  onSave: (game: Omit<Game, "id" | "players"> & { id?: string }) => Promise<boolean>;
 }
 
+const emptyForm = { name: "", fullName: "", image: "", active: true };
+
 export const GameModal = ({ open, onOpenChange, game, onSave }: GameModalProps) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    fullName: "",
-    players: 0,
-    image: "",
-  });
+  const [formData, setFormData] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (game) {
-      setFormData({
-        name: game.name,
-        fullName: game.fullName,
-        players: game.players,
-        image: game.image,
-      });
-    } else {
-      setFormData({
-        name: "",
-        fullName: "",
-        players: 0,
-        image: "",
-      });
-    }
+    setFormData(game ? { name: game.name, fullName: game.fullName, image: game.image, active: game.active } : emptyForm);
   }, [game, open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      ...(game ? { id: game.id } : {}),
-      ...formData,
-    });
-    onOpenChange(false);
+    setSaving(true);
+    const saved = await onSave({ ...(game ? { id: game.id } : {}), ...formData });
+    setSaving(false);
+    if (saved) onOpenChange(false);
   };
 
   return (
@@ -73,16 +62,6 @@ export const GameModal = ({ open, onOpenChange, game, onSave }: GameModalProps) 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Short Name</Label>
-              <Input
-                id="name"
-                placeholder="e.g., CODM"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="fullName">Full Name</Label>
               <Input
                 id="fullName"
@@ -91,27 +70,25 @@ export const GameModal = ({ open, onOpenChange, game, onSave }: GameModalProps) 
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 required
               />
+              <p className="text-xs text-muted-foreground">Competitions, teams, and player profiles pick the game by this name.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="players">Number of Players</Label>
+              <Label htmlFor="name">Short Name</Label>
               <Input
-                id="players"
-                type="number"
-                min="0"
-                value={formData.players}
-                onChange={(e) => setFormData({ ...formData, players: parseInt(e.target.value) || 0 })}
-                required
+                id="name"
+                placeholder="e.g., CODM"
+                maxLength={20}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
+              <Label htmlFor="image">Image link</Label>
               <Input
                 id="image"
-                type="url"
-                placeholder="https://example.com/image.jpg"
+                placeholder="https://example.com/image.jpg or /assets/game.png"
                 value={formData.image}
                 onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                required
               />
             </div>
             {formData.image && (
@@ -124,12 +101,19 @@ export const GameModal = ({ open, onOpenChange, game, onSave }: GameModalProps) 
                 />
               </div>
             )}
+            <div className="flex items-center justify-between rounded-md border border-border p-3">
+              <div>
+                <Label htmlFor="active">Shown on the site</Label>
+                <p className="text-xs text-muted-foreground">Hidden games stay on existing competitions and profiles.</p>
+              </div>
+              <Switch id="active" checked={formData.active} onCheckedChange={(active) => setFormData({ ...formData, active })} />
+            </div>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">{game ? "Save Changes" : "Add Game"}</Button>
+            <Button type="submit" disabled={saving}>{saving ? "Saving…" : game ? "Save Changes" : "Add Game"}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
