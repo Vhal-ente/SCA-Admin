@@ -1,16 +1,29 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, Edit3, Eye, Plus, Star, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PostModal, type Post, type PostCategory } from "@/components/modals/PostModal";
+import { api, type ApiArticle } from "@/lib/api";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-const initialPosts: Post[] = [
-  { id: 1, title: "SCA Announces the Next Path of Legends Tournament", excerpt: "Get ready for another round of competitive gaming as players battle for rankings, prizes, and a place among SCA’s top competitors.", content: "Registration is opening for the next Path of Legends tournament. Full competition details, eligibility, and the match calendar will be published shortly.", category: "tournament", author: "SCA Editorial", date: "2026-08-12", status: "published", featured: true, image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=1400&h=800&fit=crop" },
-  { id: 2, title: "Academius Games Season One Is Now Live", excerpt: "A new league season gives rising teams a consistent stage to compete, improve, and earn recognition.", content: "Academius Games begins its first season with registered teams competing across a complete league calendar.", category: "league", author: "League Desk", date: "2026-08-08", status: "published", image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=900&h=520&fit=crop" },
-  { id: 3, title: "SCA and HyperX Expand Their Tournament Partnership", excerpt: "The partnership will support more community tournaments and stronger competitive experiences for SCA players.", content: "SCA and HyperX are expanding their collaboration across upcoming competitions and player programs.", category: "partnership", author: "Partnerships Team", date: "2026-08-02", status: "published", image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=900&h=520&fit=crop" },
-  { id: 4, title: "SCA Community Night Returns This Month", excerpt: "Join players, organizers, and creators for friendly matches, challenges, and community highlights.", content: "Community Night returns with open play sessions, creator matchups, and community awards.", category: "community", author: "Community Team", date: "2026-07-27", status: "published", image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=900&h=520&fit=crop" },
-  { id: 5, title: "An Update to SCA’s Fair Play Standards", excerpt: "Clearer competition standards help protect players and keep every SCA event fair and enjoyable.", content: "Our updated fair play standards clarify participant conduct, reporting, and match-review procedures.", category: "announcement", author: "SCA Operations", date: "2026-07-21", status: "draft", image: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=900&h=520&fit=crop" },
-];
+// The API keeps paragraphs as a list and dates as UTC timestamps; the form
+// edits plain text and a local date.
+const toPost = (article: ApiArticle): Post => ({
+  id: article.id, title: article.title, excerpt: article.excerpt, content: article.content.join("\n\n"),
+  category: article.category, author: article.authorName, status: article.status,
+  date: article.publishedAt ? localDay(article.publishedAt) : new Date().toISOString().slice(0, 10),
+  image: article.imageUrl, featured: article.featured,
+});
+
+const localDay = (iso: string) => {
+  const date = new Date(iso);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+};
+
+const toPayload = (post: Omit<Post, "id">) => ({
+  title: post.title, excerpt: post.excerpt, category: post.category, authorName: post.author,
+  content: post.content.split(/\n\s*\n/), imageUrl: post.image || "", featured: Boolean(post.featured),
+  status: post.status, publishedAt: post.date ? new Date(`${post.date}T09:00:00`).toISOString() : "",
+});
 
 const categories: { value: "all" | PostCategory; label: string }[] = [
   { value: "all", label: "All" }, { value: "tournament", label: "Tournaments" }, { value: "league", label: "Leagues" },
@@ -22,11 +35,27 @@ const prettyDate = (date: string) => new Intl.DateTimeFormat("en-US", { month: "
 
 export default function News() {
   const { toast } = useToast();
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [filter, setFilter] = useState<"all" | PostCategory>("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [postToDelete, setPostToDelete] = useState<Post | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const { articles } = await api.get<{ articles: ApiArticle[] }>("/admin/news");
+      setPosts(articles.map(toPost));
+      setLoadError("");
+    } catch (error) {
+      setLoadError((error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   const featuredPosts = useMemo(() => posts.filter((post) => post.featured), [posts]);
   const visiblePosts = useMemo(() => posts.filter((post) => !post.featured && (filter === "all" || post.category === filter)), [filter, posts]);
@@ -34,20 +63,31 @@ export default function News() {
   const openCreate = () => { setSelectedPost(null); setModalOpen(true); };
   const openEdit = (post: Post) => { setSelectedPost(post); setModalOpen(true); };
 
-  const savePost = (data: Omit<Post, "id"> & { id?: number }) => {
-    let savedTitle = data.title;
-    setPosts((current) => {
-      if (data.id) return current.map((post) => post.id === data.id ? { ...post, ...data, id: post.id } : post);
-      return [{ ...data, id: Date.now() }, ...current];
-    });
-    toast({ title: data.status === "published" ? "Post published" : "Draft saved", description: `${savedTitle} is ready in the news workspace.` });
+  const savePost = async ({ id, ...data }: Omit<Post, "id"> & { id?: string }) => {
+    try {
+      if (id) await api.patch(`/admin/news/${id}`, toPayload(data));
+      else await api.post("/admin/news", toPayload(data));
+      const scheduled = data.status === "published" && new Date(`${data.date}T09:00:00`) > new Date();
+      toast({ title: data.status !== "published" ? "Draft saved" : scheduled ? "Post scheduled" : "Post published", description: data.title });
+      await load();
+      return true;
+    } catch (error) {
+      toast({ title: "Could not save post", description: (error as Error).message, variant: "destructive" });
+      return false;
+    }
   };
 
-  const deletePost = () => {
+  const deletePost = async () => {
     if (!postToDelete) return;
-    setPosts((current) => current.filter((post) => post.id !== postToDelete.id));
-    toast({ title: "Post deleted", description: `${postToDelete.title} was removed.` });
-    setPostToDelete(null);
+    try {
+      await api.delete(`/admin/news/${postToDelete.id}`);
+      toast({ title: "Post deleted", description: `${postToDelete.title} was removed.` });
+      await load();
+    } catch (error) {
+      toast({ title: "Could not delete post", description: (error as Error).message, variant: "destructive" });
+    } finally {
+      setPostToDelete(null);
+    }
   };
 
   return (
@@ -57,6 +97,9 @@ export default function News() {
           <div><p className="sca-eyebrow mb-3">SCA Journal</p><h1 className="text-4xl font-semibold tracking-tight md:text-5xl">News &amp; Updates</h1><p className="mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">Manage the featured story and publish tournament, league, partnership, announcement, and community updates.</p></div>
           <button onClick={openCreate} className="inline-flex h-12 items-center justify-center gap-2 rounded-sm bg-primary px-6 text-sm font-bold uppercase tracking-wide text-primary-foreground hover:bg-primary/90"><Plus className="h-5 w-5" /> Create post</button>
         </header>
+
+        {loading && <p className="py-10 text-sm text-muted-foreground">Loading posts…</p>}
+        {loadError && <div className="mt-8 border border-destructive/30 bg-destructive/10 p-6 text-sm text-destructive">{loadError} <button onClick={() => { setLoading(true); load(); }} className="ml-3 underline">Try again</button></div>}
 
         {featuredPosts.length > 0 && (
           <section className="py-8">

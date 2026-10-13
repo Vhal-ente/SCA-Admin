@@ -187,3 +187,21 @@ export type ApiStandings = {
   winner: FixtureEntrant | null;
   runnerUp: FixtureEntrant | null;
 };
+
+export type NewsCategory = "tournament" | "league" | "partnership" | "community" | "announcement" | "esports";
+
+export type ApiArticle = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  category: NewsCategory;
+  // One entry per paragraph.
+  content: string[];
+  imageUrl: string;
+  authorName: string;
+  featured: boolean;
+  status: "draft" | "published" | "archived";
+  publishedAt: string;
+  updatedAt: string;
+};
