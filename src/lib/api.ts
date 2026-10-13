@@ -255,3 +255,35 @@ export type ApiRefund = {
   completedAt: string;
   events: { status: string; note: string; at: string }[];
 };
+
+export type ApiPayoutStatus = "account_required" | "awaiting_approval" | "approved" | "paid" | "disqualified";
+
+export type ApiPayout = {
+  id: string;
+  place: number;
+  payeeName: string;
+  payeeEmail: string;
+  amount: number;
+  currency: string;
+  status: ApiPayoutStatus;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  reference: string;
+  note: string;
+  paidAt: string;
+};
+
+export type ApiSettlement = {
+  type: "tournament" | "league";
+  id: string;
+  name: string;
+  currency: string;
+  entrants: number;
+  prizePool: number | null;
+  // Percent of the pool paid to each finishing place.
+  allocations: number[];
+  // True once verified results decide the paid places.
+  decided: boolean;
+  payouts: ApiPayout[];
+};
