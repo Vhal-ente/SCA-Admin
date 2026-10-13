@@ -287,3 +287,40 @@ export type ApiSettlement = {
   decided: boolean;
   payouts: ApiPayout[];
 };
+
+type ReportPerson = { id: string; ign: string; email?: string };
+
+export type ApiReport = {
+  id: string;
+  reference: string;
+  category: "conduct" | "payment" | "competitive_integrity" | "account" | "other";
+  subject: string;
+  details: string;
+  status: "open" | "in_review" | "closed";
+  reporter: ReportPerson | null;
+  reportedUser: ReportPerson | null;
+  // Replies reach the reporter; notes stay with staff.
+  messages: { kind: "reply" | "note"; body: string; author?: string; at: string }[];
+  createdAt: string;
+  closedAt: string;
+};
+
+export type ApiDispute = {
+  id: string;
+  status: "open" | "under_review" | "resolved" | "rejected";
+  reason: string;
+  details: string;
+  evidenceUrl: string;
+  resolution: string;
+  raisedBy: ReportPerson | null;
+  team: string;
+  competition: string;
+  path: string;
+  matchId: string;
+  round: string;
+  home: string;
+  away: string;
+  homeScore: number | null;
+  awayScore: number | null;
+  createdAt: string;
+};

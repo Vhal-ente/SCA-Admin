@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/pagination";
 import UserActionModals from "@/components/modals/UserActionModals";
 import { PlayerDirectory } from "@/components/PlayerDirectory";
+import ReportsDesk from "@/components/ReportsDesk";
 
 type ModalType = "edit-player" | "add-admin" | "edit-team" | "delete" | null;
 
@@ -52,19 +53,11 @@ const INITIAL_ADMINS = [
   { id: "admin-7", name: "Nora James", email: "nora@sca.gg", role: "Content Admin", type: "manager", status: "Active" },
 ];
 
-const INITIAL_REPORTS = [
-  { id: "RPT-1042", subject: "Toxic behaviour in match chat", reportedUser: "Player2", reporter: "Player1", category: "Conduct", status: "Open" },
-  { id: "RPT-1038", subject: "Tournament payment not reflected", reportedUser: "ShadowHunter", reporter: "ShadowHunter", category: "Payment", status: "In review" },
-  { id: "RPT-1029", subject: "Suspected result manipulation", reportedUser: "GlitchOps", reporter: "Tournament Manager", category: "Competitive integrity", status: "Open" },
-];
-
 const ITEMS_PER_PAGE = 2; // Slice threshold setup to trigger pagination elements
 
 const Users = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("players");
-  const [reports, setReports] = useState(INITIAL_REPORTS);
-  const [reportReplies, setReportReplies] = useState<Record<string, string>>({});
 
   // Filter and Pagination Tracking hooks
   const [teamSearch, setTeamSearch] = useState("");
@@ -306,14 +299,7 @@ const Users = () => {
 
         {/* --- REPORTS PANEL TAB PANEL --- */}
         <TabsContent value="reports" className="space-y-6 outline-none focus:outline-none">
-          <div className="flex flex-col space-y-5 rounded-sm border border-border bg-card p-6">
-            <div>
-              <p className="sca-eyebrow mb-2">Trust &amp; safety</p>
-              <h3 className="text-2xl font-semibold tracking-tight text-foreground">Reports &amp; support tickets</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Investigate reports, reply to the reporter, share feedback, and close resolved tickets.</p>
-            </div>
-            <div className="grid gap-4">{reports.map(report => <article key={report.id} className="border border-border bg-background p-5"><div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><div className="flex flex-wrap items-center gap-2"><span className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">{report.id}</span><span className="border border-border px-2 py-1 text-[9px] font-bold uppercase text-muted-foreground">{report.category}</span><span className={`border px-2 py-1 text-[9px] font-bold uppercase ${report.status === 'Closed' ? 'border-emerald-500/30 text-emerald-500' : 'border-amber-500/30 text-amber-500'}`}>{report.status}</span></div><h4 className="mt-3 text-lg font-semibold text-foreground">{report.subject}</h4><p className="mt-2 text-xs text-muted-foreground">Reported user: <strong className="text-foreground">{report.reportedUser}</strong> · Submitted by {report.reporter}</p></div>{report.status !== 'Closed' && <Button variant="outline" onClick={() => { setReports(current => current.map(item => item.id === report.id ? {...item, status: 'Closed'} : item)); toast({title: 'Ticket closed', description: `${report.id} has been marked as resolved.`}); }} className="h-10 rounded-sm border-emerald-500/30 text-xs font-bold uppercase tracking-wider text-emerald-500 hover:bg-emerald-500/10">Close ticket</Button>}</div><div className="mt-5 border-t border-border pt-5"><label className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Response &amp; feedback</label><Textarea disabled={report.status === 'Closed'} value={reportReplies[report.id] || ''} onChange={event => setReportReplies(current => ({...current, [report.id]: event.target.value}))} placeholder="Write a response, request more information, or explain the resolution..." className="mt-2 min-h-24 rounded-sm border-border bg-card text-sm" /><div className="mt-3 flex flex-wrap gap-2"><Button disabled={report.status === 'Closed' || !reportReplies[report.id]?.trim()} onClick={() => toast({title: 'Response sent', description: `Your reply was sent for ${report.id}.`})} className="h-10 rounded-sm bg-primary px-5 text-xs font-bold uppercase tracking-wider text-primary-foreground">Send response</Button><Button disabled={report.status === 'Closed' || !reportReplies[report.id]?.trim()} variant="outline" onClick={() => toast({title: 'Feedback recorded', description: `Feedback was shared and added to ${report.id}.`})} className="h-10 rounded-sm border-border px-5 text-xs font-bold uppercase tracking-wider">Send feedback</Button></div></div></article>)}</div>
-          </div>
+          <ReportsDesk />
         </TabsContent>
       </Tabs>
     </div>
