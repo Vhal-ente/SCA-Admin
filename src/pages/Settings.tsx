@@ -5,12 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Mail, Palette, Save, ShieldCheck, Trash2, Upload, UserPlus } from "lucide-react";
+import { Building2, Mail, Palette, Save, Upload } from "lucide-react";
 import { applyBrandColor, DEFAULT_BRAND_COLOR, getSavedBrandColor, normalizeHexColor, saveBrandColor } from "@/lib/brand-theme";
+import { StaffAccess } from "@/components/StaffAccess";
 
 const fieldClass = "h-12 rounded-sm border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary";
 const cardClass = "rounded-sm border border-border bg-card";
-const staffRoles = ["Super Admin", "Moderator", "Tournament Manager", "Shogun Manager", "Finance Manager", "League Manager", "Content Admin"];
 
 function SectionHeader({ eyebrow, title, description, icon: Icon }: { eyebrow: string; title: string; description: string; icon: typeof Building2 }) {
   return <div className="flex items-start gap-4 border-b border-border p-6"><span className="flex h-11 w-11 shrink-0 items-center justify-center bg-primary/10 text-primary"><Icon className="h-5 w-5" /></span><div><p className="sca-eyebrow mb-1">{eyebrow}</p><h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{description}</p></div></div>;
@@ -22,18 +22,6 @@ function SaveBar({ message, onSave }: { message: string; onSave?: () => void }) 
 }
 
 const Settings = () => {
-  const [admins, setAdmins] = useState([
-    { name: "Amina Bello", email: "admin@sca.gg", role: "Super Admin" },
-    { name: "Daniel Okafor", email: "moderator@sca.gg", role: "Moderator" },
-    { name: "Maya Chen", email: "tournaments@sca.gg", role: "Tournament Manager" },
-    { name: "Tari Adeyemi", email: "shogun@sca.gg", role: "Shogun Manager" },
-    { name: "Lena Ibrahim", email: "finance@sca.gg", role: "Finance Manager" },
-    { name: "Femi Cole", email: "leagues@sca.gg", role: "League Manager" },
-    { name: "Nora James", email: "content@sca.gg", role: "Content Admin" },
-  ]);
-  const [adminName, setAdminName] = useState("");
-  const [adminEmail, setAdminEmail] = useState("");
-  const [adminRole, setAdminRole] = useState("Moderator");
   const [brandColor, setBrandColor] = useState(getSavedBrandColor);
   const [brandColorError, setBrandColorError] = useState("");
   const previewBrandColor = (value: string) => {
@@ -41,13 +29,6 @@ const Settings = () => {
     const normalized = normalizeHexColor(value);
     setBrandColorError(normalized ? "" : "Enter a valid 3 or 6 digit hex color.");
     if (normalized) applyBrandColor(normalized);
-  };
-  const addAdmin = () => {
-    if (!adminName.trim() || !adminEmail.trim() || admins.some(admin => admin.email.toLowerCase() === adminEmail.trim().toLowerCase())) return;
-    setAdmins(current => [...current, { name: adminName.trim(), email: adminEmail.trim(), role: adminRole }]);
-    setAdminName("");
-    setAdminEmail("");
-    setAdminRole("Moderator");
   };
 
   const labelClass = "mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground";
@@ -89,26 +70,7 @@ const Settings = () => {
       </TabsContent>
 
       <TabsContent value="permissions" className="space-y-6">
-        <section className={cardClass}><SectionHeader eyebrow="Access control" title="Platform administrators" description="Invite staff and manage their current platform role." icon={UserPlus} /><div className="p-6">
-          <div className="grid gap-3 lg:grid-cols-[1fr_1.3fr_1fr_auto]">
-            <label><span className={labelClass}>Full name</span><Input value={adminName} onChange={event => setAdminName(event.target.value)} placeholder="e.g. Amina Bello" className={fieldClass} /></label>
-            <label><span className={labelClass}>Email address</span><Input value={adminEmail} onChange={event => setAdminEmail(event.target.value)} onKeyDown={event => event.key === "Enter" && addAdmin()} placeholder="name@sca.gg" type="email" className={fieldClass} /></label>
-            <label><span className={labelClass}>Initial role</span><select value={adminRole} onChange={event => setAdminRole(event.target.value)} className={`theme-native-select ${fieldClass}`}>{staffRoles.map(role => <option key={role}>{role}</option>)}</select></label>
-            <Button onClick={addAdmin} disabled={!adminName.trim() || !adminEmail.trim()} className="mt-auto h-12 rounded-sm bg-primary px-6 text-xs font-bold uppercase tracking-wider text-primary-foreground hover:bg-primary/90 disabled:opacity-40"><UserPlus className="mr-2 h-4 w-4" />Add staff</Button>
-          </div>
-          <div className="mt-7 grid gap-3 lg:grid-cols-2">{admins.map(admin => <article key={admin.email} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 border border-border bg-background p-4"><span className="flex h-12 w-12 items-center justify-center bg-primary/10 text-xs font-black text-primary">{admin.name.split(" ").map(part => part[0]).join("").slice(0, 2).toUpperCase()}</span><div className="min-w-0"><p className="truncate text-sm font-bold text-foreground">{admin.name}</p><p className="mt-0.5 truncate text-xs text-muted-foreground">{admin.email}</p><select aria-label={`Role for ${admin.name}`} value={admin.role} onChange={event => setAdmins(current => current.map(item => item.email === admin.email ? { ...item, role: event.target.value } : item))} className="theme-native-select mt-2 h-9 w-full max-w-64 border border-border bg-card px-3 text-xs font-semibold text-foreground outline-none focus:border-primary">{staffRoles.map(role => <option key={role}>{role}</option>)}</select></div><button onClick={() => setAdmins(current => current.filter(item => item.email !== admin.email))} aria-label={`Delete ${admin.name}`} title="Delete staff member" className="flex h-10 w-10 items-center justify-center border border-border text-muted-foreground hover:border-destructive/50 hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-4 w-4" /></button></article>)}</div>
-          {admins.length === 0 && <div className="mt-7 border border-dashed border-border p-10 text-center text-sm text-muted-foreground">No platform staff have been added yet.</div>}
-        </div></section>
-
-        <section className={cardClass}><SectionHeader eyebrow="Permission matrix" title="Role permissions" description="Define which operational areas each staff role can manage." icon={ShieldCheck} /><div className="grid gap-px bg-border md:grid-cols-2 xl:grid-cols-3">{[
-          { role: "Super Admin", description: "Full platform access", locked: true, values: [true, true, true, true, true, true, true, true] },
-          { role: "Moderator", description: "User safety, reports, and content review", locked: false, values: [false, false, false, true, false, false, false, false] },
-          { role: "Tournament Manager", description: "Tournament setup and match operations", locked: false, values: [true, false, false, false, false, false, false, false] },
-          { role: "Shogun Manager", description: "Shogun clan and community operations", locked: false, values: [false, false, true, false, false, false, false, false] },
-          { role: "Finance Manager", description: "Transactions, payouts, and gateways", locked: false, values: [false, false, false, false, true, false, false, false] },
-          { role: "League Manager", description: "League seasons and team operations", locked: false, values: [false, true, false, false, false, false, false, false] },
-          { role: "Content Admin", description: "Public website copy, jobs, sponsors, and press assets", locked: false, values: [false, false, false, false, false, false, true, false] },
-        ].map(role => <div key={role.role} className="bg-card p-6"><div className="flex items-start justify-between gap-3"><div><h3 className="text-lg font-semibold text-foreground">{role.role}</h3><p className="mb-5 mt-1 text-xs text-muted-foreground">{role.description}</p></div>{role.locked && <span className="border border-primary/30 bg-primary/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-primary">Locked</span>}</div><div className="space-y-4">{["Tournaments", "Leagues", "Shogun", "Users & reports", "Finance", "System settings", "Website content", "Legal publishing"].map((permission, index) => <div key={permission} className="flex items-center justify-between gap-3"><span className="text-sm text-foreground">{permission}</span><Switch defaultChecked={role.values[index]} disabled={role.locked} /></div>)}</div></div>)}</div><SaveBar message="Permission changes affect staff access immediately. Legal publishing remains a separate restricted permission." /></section>
+        <StaffAccess />
       </TabsContent>
     </Tabs>
   </div></div>;
