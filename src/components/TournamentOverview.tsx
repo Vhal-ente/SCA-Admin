@@ -541,7 +541,7 @@ export const Overview = ({
       )}
       {activeTab === "SCHEDULE" && <ScheduleTab activeTab={activeTab} />}
       {activeTab === "SETTINGS" && <SettingsTab activeTab={activeTab} />}
-      {activeTab === "STANDINGS" && <TournamentStandings activeTab={activeTab} mode={mode} tournamentPhase={tournamentPhase} structureType={tournamentStructure} />}
+      {activeTab === "STANDINGS" && <TournamentStandings activeTab={activeTab} entityType={entityType} competitionId={tournament?.id} mode={mode} structureType={tournamentStructure} />}
       {activeTab === "MATCHES" && <MatchTab activeTab={activeTab} entityType={entityType} competitionId={tournament?.id} mode={mode} tournamentPhase={tournamentPhase} onPhaseChange={setTournamentPhase} onStructureGenerated={setTournamentStructure} />}
       </div>
     </div>

@@ -41,6 +41,12 @@ const toIso = (date: string, time: string) => (date ? new Date(`${date}T${time |
 const isPlayed = (fixture: ApiFixture) =>
   !["scheduled", "cancelled"].includes(fixture.status) || fixture.homeScore !== null || fixture.awayScore !== null || fixture.verified;
 
+// "2 – 1", "Forfeit", or "" before a result.
+const resultText = (fixture: ApiFixture) => {
+  if (fixture.status === "forfeited") return "Forfeit";
+  return fixture.homeScore !== null && fixture.awayScore !== null ? `${fixture.homeScore} – ${fixture.awayScore}` : "";
+};
+
 type Draft = { date: string; time: string; venue: string; streamUrl: string; bestOf: number; home: string; away: string };
 
 function StructureView({ structure, fixtures, mode }: { structure: StructureType; fixtures: ApiFixture[]; mode: "Player" | "Team" }) {
@@ -65,9 +71,9 @@ function StructureView({ structure, fixtures, mode }: { structure: StructureType
   return <div className="space-y-7 overflow-x-auto"><div><p className="sca-eyebrow mb-1">Bracket structure</p><h3 className="text-xl font-semibold">{structure}</h3><p className="mt-1 text-sm text-muted-foreground">{entrantCount} {noun} · {fixtures.length} matches · byes go straight to round 2</p></div><div className="flex min-w-max gap-4">{rounds.map(round => { const inRound = fixtures.filter(fixture => fixture.roundNumber === round); return <div key={round} className="w-60 border border-border bg-card"><div className="border-b border-border bg-secondary/50 px-4 py-3 text-xs font-bold uppercase tracking-wider text-primary">{inRound[0]?.round || `Round ${round}`}</div><div className="space-y-3 p-3">{inRound.map(fixture => <div key={fixture.id} className="border border-border bg-background"><div className="border-b border-border px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">#{fixture.matchNumber} · BO{fixture.bestOf}</div>{side(fixture, "home")}{side(fixture, "away")}</div>)}</div></div>; })}<div className="flex w-56 items-center gap-3 self-center border border-primary/30 bg-primary/5 p-4"><Trophy className="h-5 w-5 text-primary" /><div><p className="font-semibold">Champion</p><p className="text-xs text-muted-foreground">Winner of the final</p></div></div></div></div>;
 }
 
-function FixtureSchedule({ fixtures, onEdit }: { fixtures: ApiFixture[]; onEdit: (fixture: ApiFixture) => void }) {
+function FixtureSchedule({ fixtures, onEdit, onResult }: { fixtures: ApiFixture[]; onEdit: (fixture: ApiFixture) => void; onResult: (fixture: ApiFixture) => void }) {
   const rounds = Array.from(new Set(fixtures.map(fixture => fixture.roundNumber))).sort((a, b) => a - b);
-  return <div className="space-y-5"><div className="flex items-end justify-between"><div><p className="sca-eyebrow mb-1">Full competition schedule</p><h3 className="text-xl font-semibold text-foreground">Fixtures from start to finish</h3><p className="mt-1 text-sm text-muted-foreground">Set dates, venues, and streams, or swap entrants before a match is played.</p></div><span className="border border-border bg-card px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{fixtures.length} fixtures</span></div><div className="space-y-4">{rounds.map(round => { const inRound = fixtures.filter(fixture => fixture.roundNumber === round); return <div key={round} className="overflow-hidden border border-border bg-card"><div className="flex items-center justify-between border-b border-border bg-secondary/50 px-5 py-3"><span className="text-xs font-bold uppercase tracking-[0.16em] text-primary">{inRound[0]?.round}</span><span className="text-xs text-muted-foreground">{inRound.length} slots</span></div><div className="divide-y divide-border">{inRound.map(fixture => <div key={fixture.id} className="grid gap-4 px-5 py-4 md:grid-cols-[3rem_1.4fr_1fr_1fr_auto] md:items-center"><span className="text-xs font-bold text-muted-foreground">#{pad(fixture.matchNumber)}</span><div className="flex items-center gap-3 text-sm"><span className={`font-semibold ${fixture.home ? "text-foreground" : "text-muted-foreground"}`}>{fixture.home?.name || "TBD"}</span><span className="text-primary">vs</span><span className={`font-semibold ${fixture.away ? "text-foreground" : "text-muted-foreground"}`}>{fixture.away?.name || "TBD"}</span><span className="text-[10px] font-bold uppercase text-muted-foreground">BO{fixture.bestOf}</span></div><p className="flex items-center gap-2 text-xs text-muted-foreground"><CalendarDays className="h-4 w-4 text-primary" />{fixture.scheduledAt ? localDate(fixture.scheduledAt) : "Not scheduled"}{fixture.scheduledAt && <><Clock className="ml-1 h-4 w-4 text-primary" />{localTime(fixture.scheduledAt)}</>}</p><p className="flex items-center gap-2 text-xs text-muted-foreground"><MapPin className="h-4 w-4 text-primary" />{fixture.venue || "Venue not set"}</p><button onClick={() => onEdit(fixture)} className="flex h-9 items-center justify-center gap-2 border border-border bg-background px-3 text-[10px] font-bold uppercase tracking-wide text-foreground hover:border-primary hover:text-primary"><Pencil className="h-3.5 w-3.5" />Edit</button></div>)}</div></div>; })}</div></div>;
+  return <div className="space-y-5"><div className="flex items-end justify-between"><div><p className="sca-eyebrow mb-1">Full competition schedule</p><h3 className="text-xl font-semibold text-foreground">Fixtures from start to finish</h3><p className="mt-1 text-sm text-muted-foreground">Set dates, venues, and streams, or swap entrants before a match is played.</p></div><span className="border border-border bg-card px-3 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{fixtures.length} fixtures</span></div><div className="space-y-4">{rounds.map(round => { const inRound = fixtures.filter(fixture => fixture.roundNumber === round); return <div key={round} className="overflow-hidden border border-border bg-card"><div className="flex items-center justify-between border-b border-border bg-secondary/50 px-5 py-3"><span className="text-xs font-bold uppercase tracking-[0.16em] text-primary">{inRound[0]?.round}</span><span className="text-xs text-muted-foreground">{inRound.length} slots</span></div><div className="divide-y divide-border">{inRound.map(fixture => <div key={fixture.id} className="grid gap-4 px-5 py-4 md:grid-cols-[3rem_1.4fr_1fr_1fr_auto_auto] md:items-center"><span className="text-xs font-bold text-muted-foreground">#{pad(fixture.matchNumber)}</span><div className="flex items-center gap-3 text-sm"><span className={`font-semibold ${fixture.home ? "text-foreground" : "text-muted-foreground"}`}>{fixture.home?.name || "TBD"}</span><span className="text-primary">vs</span><span className={`font-semibold ${fixture.away ? "text-foreground" : "text-muted-foreground"}`}>{fixture.away?.name || "TBD"}</span><span className="text-[10px] font-bold uppercase text-muted-foreground">BO{fixture.bestOf}</span>{resultText(fixture) && <span className="border border-primary/25 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">{resultText(fixture)}</span>}</div><p className="flex items-center gap-2 text-xs text-muted-foreground"><CalendarDays className="h-4 w-4 text-primary" />{fixture.scheduledAt ? localDate(fixture.scheduledAt) : "Not scheduled"}{fixture.scheduledAt && <><Clock className="ml-1 h-4 w-4 text-primary" />{localTime(fixture.scheduledAt)}</>}</p><p className="flex items-center gap-2 text-xs text-muted-foreground"><MapPin className="h-4 w-4 text-primary" />{fixture.venue || "Venue not set"}</p><button onClick={() => onEdit(fixture)} className="flex h-9 items-center justify-center gap-2 border border-border bg-background px-3 text-[10px] font-bold uppercase tracking-wide text-foreground hover:border-primary hover:text-primary"><Pencil className="h-3.5 w-3.5" />Edit</button><button onClick={() => onResult(fixture)} disabled={!fixture.home || !fixture.away || fixture.status === "cancelled"} className="flex h-9 items-center justify-center gap-2 border border-border bg-background px-3 text-[10px] font-bold uppercase tracking-wide text-foreground hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"><Trophy className="h-3.5 w-3.5" />{isPlayed(fixture) ? "Result" : "Record result"}</button></div>)}</div></div>; })}</div></div>;
 }
 
 interface MatchTabProps {
@@ -102,6 +108,8 @@ export default function MatchTab({ activeTab, entityType, competitionId, mode, t
   const [editing, setEditing] = useState<ApiFixture | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
+  const [resulting, setResulting] = useState<ApiFixture | null>(null);
+  const [scores, setScores] = useState({ home: "", away: "" });
 
   const applyFixtures = useCallback((next: ApiFixtures) => {
     setData(next);
@@ -211,6 +219,30 @@ export default function MatchTab({ activeTab, entityType, competitionId, mode, t
     }
   };
 
+  const openResult = (fixture: ApiFixture) => {
+    setResulting(fixture);
+    setScores({ home: fixture.homeScore?.toString() ?? "", away: fixture.awayScore?.toString() ?? "" });
+  };
+
+  // Staff report and verify in one step; a verified bracket winner moves on.
+  const submitResult = async (body: { homeScore?: number; awayScore?: number; forfeit?: "home" | "away" } | null) => {
+    if (!resulting) return;
+    setSaving(true);
+    try {
+      const path = `${base}/fixtures/${resulting.id}/result`;
+      applyFixtures(body ? await api.put<ApiFixtures>(path, body) : await api.delete<ApiFixtures>(path));
+      setResulting(null);
+      toast({ title: body ? "Result verified" : "Result cleared" });
+    } catch (error) {
+      toast({ title: body ? "Could not record result" : "Could not clear result", description: (error as Error).message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const scoreNeeded = resulting && resulting.bestOf > 1 ? (resulting.bestOf + 1) / 2 : 0;
+  const draws = data?.structure === "round_robin";
+
   const played = editing ? isPlayed(editing) : false;
   const entrantSelect = (slot: "home" | "away") => {
     if (!editing || !draft) return null;
@@ -235,7 +267,7 @@ export default function MatchTab({ activeTab, entityType, competitionId, mode, t
       )}
 
       {generated ? (
-        <div className="space-y-10"><StructureView structure={generated} fixtures={fixtures} mode={mode} /><FixtureSchedule fixtures={fixtures} onEdit={openEditor} /></div>
+        <div className="space-y-10"><StructureView structure={generated} fixtures={fixtures} mode={mode} /><FixtureSchedule fixtures={fixtures} onEdit={openEditor} onResult={openResult} /></div>
       ) : (
         <div className="flex min-h-80 flex-col items-center justify-center border border-dashed border-border bg-card px-6 text-center">
           <span className="flex h-14 w-14 items-center justify-center bg-primary/10 text-primary"><Brackets className="h-7 w-7" /></span>
@@ -271,6 +303,23 @@ export default function MatchTab({ activeTab, entityType, competitionId, mode, t
         </div>
       )}
 
+      {resulting && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-xl border border-border bg-card shadow-2xl">
+            <div className="flex items-start justify-between border-b border-border bg-secondary/35 px-7 py-6"><div><p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Match result</p><h3 className="mt-1 text-2xl font-semibold text-foreground">{resulting.round} · #{resulting.matchNumber}</h3><p className="mt-1 text-sm text-muted-foreground">{scoreNeeded ? `Best of ${resulting.bestOf}: the winner takes ${scoreNeeded} games.` : draws ? "Enter the final score. A draw earns each side a point." : "Enter the final score. Knockout matches need a winner."}</p></div><button onClick={() => setResulting(null)} className="p-2 text-muted-foreground hover:bg-secondary hover:text-foreground"><X className="h-5 w-5" /></button></div>
+            <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-4 p-7">
+              {(["home", "away"] as const).map((slot, index) => <label key={slot} className={index ? "order-3" : ""}><span className="mb-2 block truncate text-xs font-bold uppercase tracking-wider text-muted-foreground">{resulting[slot]?.name}</span><input type="number" min="0" max={scoreNeeded || 999} value={scores[slot]} onChange={event => setScores({ ...scores, [slot]: event.target.value })} className="h-14 w-full border border-border bg-background px-4 text-center text-2xl font-semibold text-foreground outline-none focus:border-primary" /></label>)}
+              <span className="order-2 pb-4 text-primary">vs</span>
+            </div>
+            <div className="flex flex-wrap gap-3 border-t border-border px-7 py-5">
+              <button disabled={saving} onClick={() => submitResult({ forfeit: "home" })} className="h-10 border border-destructive/40 px-4 text-[10px] font-bold uppercase tracking-wide text-destructive disabled:opacity-50">{resulting.home?.name} forfeits</button>
+              <button disabled={saving} onClick={() => submitResult({ forfeit: "away" })} className="h-10 border border-destructive/40 px-4 text-[10px] font-bold uppercase tracking-wide text-destructive disabled:opacity-50">{resulting.away?.name} forfeits</button>
+              {isPlayed(resulting) && <button disabled={saving} onClick={() => submitResult(null)} className="h-10 border border-border px-4 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:text-foreground disabled:opacity-50">Clear result</button>}
+              <button disabled={saving || scores.home === "" || scores.away === ""} onClick={() => submitResult({ homeScore: Number(scores.home), awayScore: Number(scores.away) })} className="ml-auto h-10 bg-primary px-6 text-xs font-bold uppercase tracking-wide text-primary-foreground disabled:opacity-50">{saving ? "Saving…" : "Verify result"}</button>
+            </div>
+          </div>
+        </div>
+      )}
       {editing && draft && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-2xl border border-border bg-card shadow-2xl">

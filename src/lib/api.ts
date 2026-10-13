@@ -25,6 +25,7 @@ export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body }),
   patch: <T>(path: string, body?: unknown) => request<T>(path, { method: "PATCH", body }),
+  put: <T>(path: string, body?: unknown) => request<T>(path, { method: "PUT", body }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };
 
@@ -163,4 +164,26 @@ export type ApiFixtures = {
   structure: FixtureStructure | "";
   bestOf: number;
   fixtures: ApiFixture[];
+};
+
+export type ApiStandingRow = {
+  rank: number;
+  entrant: FixtureEntrant;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  points: number;
+};
+
+export type ApiStandings = {
+  structure: FixtureStructure | "";
+  // Round robin table, ranked by verified results.
+  table: ApiStandingRow[];
+  // Knockout placings: place 0 means still in the bracket.
+  placements: { place: number; round: string; entrant: FixtureEntrant }[];
+  winner: FixtureEntrant | null;
+  runnerUp: FixtureEntrant | null;
 };
