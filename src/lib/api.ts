@@ -205,3 +205,17 @@ export type ApiArticle = {
   publishedAt: string;
   updatedAt: string;
 };
+
+export type ApiGame = {
+  id: string;
+  name: string;
+  slug: string;
+  shortName: string;
+  iconUrl: string;
+  active: boolean;
+  sortOrder: number;
+  // Accounts listing the game; console listings only.
+  players?: number;
+};
+
+export type ApiGamePlayer = { id: string; ign: string; name: string; status: string; teams: string[] };
