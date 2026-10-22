@@ -4,11 +4,13 @@ const BASE = `${API_URL}/api/v1`;
 type Options = { method?: string; body?: unknown; retry?: boolean };
 
 async function request<T>(path: string, { method = "GET", body, retry = true }: Options = {}): Promise<T> {
+  // A FormData body (a file upload) sets its own multipart Content-Type.
+  const isForm = body instanceof FormData;
   const response = await fetch(`${BASE}${path}`, {
     method,
     credentials: "include",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
+    headers: body && !isForm ? { "Content-Type": "application/json" } : undefined,
+    body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
   });
 
   if (response.status === 401 && retry && !path.startsWith("/auth/refresh") && !path.startsWith("/auth/login")) {
@@ -29,6 +31,15 @@ export const api = {
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };
 
+export type Upload = { id: string; url: string; name: string; contentType: string; size: number };
+
+// uploadFile stores a file on the API and returns the link to save in place of it.
+export const uploadFile = (file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return request<Upload>("/admin/uploads", { method: "POST", body: form });
+};
+
 export type AdminUser = {
   id: string;
   ign: string;
@@ -39,6 +50,7 @@ export type AdminUser = {
   status: string;
   country: string;
   multiTeamAllowed: boolean;
+  verified: boolean;
   createdAt: string;
   lastLoginAt: string;
 };
@@ -48,6 +60,7 @@ export type ApiTournament = {
   name: string;
   slug: string;
   game: string;
+  season: string;
   organizer: string;
   description: string;
   bannerUrl: string;

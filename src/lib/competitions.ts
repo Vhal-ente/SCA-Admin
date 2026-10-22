@@ -77,6 +77,9 @@ export const toUiTournament = (item: ApiTournament): Tournament => {
     id: item.id,
     name: item.name,
     game: item.game,
+    season: item.season,
+    isSeasonal: Boolean(item.season),
+    seasonNumber: Number(item.season?.match(/\d+/)?.[0]) || 1,
     status,
     registrationStatus: registration,
     apiStatus: item.status,
@@ -96,6 +99,8 @@ export const toUiTournament = (item: ApiTournament): Tournament => {
 export const toTournamentPayload = (item: Partial<Tournament>) => ({
   name: item.name,
   game: item.game,
+  // Leave the season alone when the form does not say (the create dialog).
+  season: item.isSeasonal === undefined ? undefined : item.isSeasonal ? `Season ${item.seasonNumber || 1}` : "",
   mode: item.mode === "Player" ? "solo" : "team",
   entryFee: item.entryType === "Free" ? "0" : feeToAmount(item.entryFee),
   prizeText: item.prize,

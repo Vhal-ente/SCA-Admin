@@ -1,5 +1,6 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { CalendarDays, Clock, MapPin, Pencil, Plus, Radio, Trash2, X } from "lucide-react";
+import { api } from "@/lib/api";
 
 type ScheduleItem = {
   id: string;
@@ -11,11 +12,10 @@ type ScheduleItem = {
   status: "Draft" | "Published";
 };
 
-const initialSchedule: ScheduleItem[] = [
-  { id: "registration", stage: "Registration closes", date: "2025-06-28", time: "23:59", timezone: "WAT", venue: "Online", status: "Published" },
-  { id: "groups", stage: "Group stage", date: "2025-07-01", time: "14:00", timezone: "WAT", venue: "Online qualifiers", status: "Published" },
-  { id: "final", stage: "Grand final", date: "2025-07-05", time: "18:00", timezone: "WAT", venue: "SCA Main Stage", status: "Published" },
-];
+type ApiScheduleItem = Omit<ScheduleItem, "status"> & { status: "draft" | "published" };
+
+const fromApi = (items: ApiScheduleItem[]): ScheduleItem[] =>
+  items.map(item => ({ ...item, status: item.status === "published" ? "Published" : "Draft" }));
 
 const emptyItem = (): ScheduleItem => ({ id: "", stage: "", date: "", time: "", timezone: "WAT", venue: "", status: "Draft" });
 
@@ -23,51 +23,86 @@ const formatDate = (date: string) => date
   ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`))
   : "Date not set";
 
-export default function ScheduleTab({ activeTab }: { activeTab: string }) {
-  const [schedule, setSchedule] = useState(initialSchedule);
+// path is the competition's API path, such as "tournaments/{id}".
+export default function ScheduleTab({ activeTab, path, entityLabel = "tournament" }: { activeTab: string; path: string; entityLabel?: string }) {
+  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ScheduleItem>(emptyItem());
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api.get<{ schedule: ApiScheduleItem[] }>(`/admin/${path}/schedule`)
+      .then(({ schedule: items }) => active && setSchedule(fromApi(items)))
+      .catch(err => active && setError((err as Error).message))
+      .finally(() => active && setLoading(false));
+    return () => { active = false; };
+  }, [path]);
 
   if (activeTab !== "SCHEDULE") return null;
 
   const openCreate = () => {
     setEditingItem(emptyItem());
+    setError("");
     setEditorOpen(true);
   };
 
   const openEdit = (item: ScheduleItem) => {
     setEditingItem({ ...item });
+    setError("");
     setEditorOpen(true);
   };
 
-  const saveSchedule = (event: FormEvent) => {
-    event.preventDefault();
-    if (!editingItem.stage.trim() || !editingItem.date || !editingItem.time || !editingItem.venue.trim()) return;
-    if (editingItem.id) {
-      setSchedule(current => current.map(item => item.id === editingItem.id ? editingItem : item));
-    } else {
-      setSchedule(current => [...current, { ...editingItem, id: `schedule-${Date.now()}` }]);
+  // Every change returns the whole schedule, so the list always shows what is stored.
+  const run = async (change: () => Promise<{ schedule: ApiScheduleItem[] }>) => {
+    setSaving(true);
+    setError("");
+    try {
+      const { schedule: items } = await change();
+      setSchedule(fromApi(items));
+      return true;
+    } catch (err) {
+      setError((err as Error).message);
+      return false;
+    } finally {
+      setSaving(false);
     }
-    setEditorOpen(false);
   };
 
-  const removeSchedule = (id: string) => setSchedule(current => current.filter(item => item.id !== id));
+  const saveSchedule = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!editingItem.stage.trim() || !editingItem.date) return;
+    const body = {
+      stage: editingItem.stage, date: editingItem.date, time: editingItem.time, timezone: editingItem.timezone,
+      venue: editingItem.venue, status: editingItem.status === "Published" ? "published" : "draft",
+    };
+    const saved = await run(() => editingItem.id
+      ? api.put(`/admin/${path}/schedule/${editingItem.id}`, body)
+      : api.post(`/admin/${path}/schedule`, body));
+    if (saved) setEditorOpen(false);
+  };
+
+  const removeSchedule = (id: string) => run(() => api.delete(`/admin/${path}/schedule/${id}`));
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="sca-eyebrow mb-2">Competition timeline</p>
-          <h2 className="text-2xl font-semibold tracking-tight">Tournament schedule</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Create and maintain the dates published to players and spectators.</p>
+          <h2 className="text-2xl font-semibold tracking-tight capitalize">{entityLabel} schedule</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Create and maintain the dates published to players and spectators. Only published items appear on the public {entityLabel} page.</p>
         </div>
         <button onClick={openCreate} className="inline-flex h-11 items-center justify-center gap-2 bg-primary px-5 text-xs font-bold uppercase tracking-wide text-primary-foreground transition-all hover:brightness-105">
           <Plus className="h-4 w-4" /> Add schedule item
         </button>
       </div>
 
+      {error && !editorOpen && <p role="alert" className="text-sm text-destructive">{error}</p>}
       <div className="overflow-hidden rounded-sm border border-border bg-card">
-        {schedule.length ? schedule.map((item, index) => (
+        {loading ? <p className="px-6 py-14 text-center text-sm text-muted-foreground">Loading schedule…</p> : schedule.length ? schedule.map((item, index) => (
           <div key={item.id} className="grid gap-4 border-b border-border p-5 last:border-b-0 md:grid-cols-[3rem_1.15fr_1fr_1fr_auto] md:items-center">
             <span className="text-sm font-bold text-primary">{String(index + 1).padStart(2, "0")}</span>
             <div>
@@ -80,11 +115,11 @@ export default function ScheduleTab({ activeTab }: { activeTab: string }) {
             <p className="flex items-center gap-2 text-sm text-muted-foreground"><MapPin className="h-4 w-4 text-primary" />{item.venue}</p>
             <div className="flex items-center gap-2">
               <button onClick={() => openEdit(item)} className="flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition-colors hover:border-primary hover:text-primary" aria-label={`Edit ${item.stage}`}><Pencil className="h-4 w-4" /></button>
-              <button onClick={() => removeSchedule(item.id)} className="flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive" aria-label={`Delete ${item.stage}`}><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => removeSchedule(item.id)} disabled={saving} className="flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition-colors hover:border-destructive hover:text-destructive" aria-label={`Delete ${item.stage}`}><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         )) : (
-          <div className="px-6 py-14 text-center"><CalendarDays className="mx-auto h-8 w-8 text-primary" /><h3 className="mt-4 font-semibold">No schedule items yet</h3><p className="mt-1 text-sm text-muted-foreground">Add the first milestone for this tournament.</p></div>
+          <div className="px-6 py-14 text-center"><CalendarDays className="mx-auto h-8 w-8 text-primary" /><h3 className="mt-4 font-semibold">No schedule items yet</h3><p className="mt-1 text-sm text-muted-foreground">Add the first milestone for this {entityLabel}.</p></div>
         )}
       </div>
 
@@ -104,9 +139,10 @@ export default function ScheduleTab({ activeTab }: { activeTab: string }) {
               <label className="sm:col-span-2"><span className="mb-2 block text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">Visibility</span><select value={editingItem.status} onChange={event => setEditingItem({ ...editingItem, status: event.target.value as ScheduleItem["status"] })} className="h-12 w-full border border-border bg-background px-4 text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary"><option>Draft</option><option>Published</option></select></label>
             </div>
 
+            {error && <p role="alert" className="px-7 text-sm text-destructive">{error}</p>}
             <div className="flex justify-end gap-3 border-t border-border px-7 py-5">
               <button type="button" onClick={() => setEditorOpen(false)} className="h-11 border border-border bg-background px-5 text-xs font-bold uppercase tracking-wide text-muted-foreground hover:border-foreground hover:text-foreground">Cancel</button>
-              <button type="submit" className="h-11 bg-primary px-6 text-xs font-bold uppercase tracking-wide text-primary-foreground hover:brightness-105">{editingItem.id ? "Save changes" : "Add to schedule"}</button>
+              <button type="submit" disabled={saving} className="h-11 bg-primary disabled:opacity-50 px-6 text-xs font-bold uppercase tracking-wide text-primary-foreground hover:brightness-105">{editingItem.id ? "Save changes" : "Add to schedule"}</button>
             </div>
           </form>
         </div>

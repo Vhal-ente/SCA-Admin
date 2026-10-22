@@ -22,6 +22,9 @@ export interface Tournament {
   id: string;
   name: string;
   game: string;
+  season?: string;
+  isSeasonal?: boolean;
+  seasonNumber?: number;
   status: "Active" | "Upcoming" | "Completed";
   mode: "Player" | "Team";
   entryType: "Free" | "Paid";

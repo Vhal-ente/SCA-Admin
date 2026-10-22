@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { api, type AdminUser } from "@/lib/api";
+import { api, uploadFile, type AdminUser } from "@/lib/api";
 import { useSiteContent } from "@/hooks/use-site-content";
 
 type Visibility = "Published" | "Draft" | "Hidden";
@@ -30,7 +30,6 @@ const defaultShogun: ShogunDoc = {
 };
 type Division = Item & { roster: RosterEntry[] };
 const tabItems = [["overview","Overview"],["content","Page Content"],["events","Events"],["teams","Teams & Rosters"],["sponsors","Sponsors"],["achievements","Achievements"],["gallery","Gallery"],["social","Social Links"],["settings","Settings"]] as const;
-const MAX_IMAGE_BYTES = 1024 * 1024;
 const tone: Record<Visibility,string> = { Published:"border-emerald-500/30 bg-emerald-500/10 text-emerald-400", Draft:"border-amber-500/30 bg-amber-500/10 text-amber-400", Hidden:"border-border bg-muted text-muted-foreground" };
 
 function Heading({ eyebrow, title, copy, action }: { eyebrow:string; title:string; copy:string; action?:React.ReactNode }) {
@@ -48,18 +47,14 @@ function Manager({ title, copy, icon:Icon, items, setItems, enableImage = false,
       toast({ title: "Choose an image file", description: "PNG, JPG and WebP files are supported.", variant: "destructive" });
       return;
     }
-    // Images are stored inside the page document, which is capped at 4 MB.
-    if (file.size > MAX_IMAGE_BYTES) {
-      toast({ title: "Image is too large", description: "Choose an image smaller than 1 MB, or link a hosted image.", variant: "destructive" });
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setEdit(current => current ? { ...current, imageUrl: String(reader.result) } : current);
-    reader.readAsDataURL(file);
+    // The image is stored on the API; the page keeps its link.
+    uploadFile(file)
+      .then(({ url }) => setEdit(current => current ? { ...current, imageUrl: url } : current))
+      .catch(error => toast({ title: "Upload failed", description: (error as Error).message, variant: "destructive" }));
   };
   const save = () => { if (!edit?.title.trim()) return; setItems(old => old.some(x=>x.id===edit.id) ? old.map(x=>x.id===edit.id?edit:x) : [...old,edit]); setEdit(null); toast({title:`${title} updated`}); };
   return <div className="space-y-6"><Heading eyebrow="Shogun operations" title={title} copy={copy} action={<Button onClick={()=>open()} className="gap-2"><Plus className="h-4 w-4"/>Add new</Button>}/><div className="grid gap-4 lg:grid-cols-2">{items.map(item=><Card key={item.id} className="rounded-sm border-border bg-card p-5"><div className="flex gap-4">{enableImage && item.imageUrl ? <div className="grid h-16 w-24 shrink-0 place-items-center border border-border bg-background p-2"><img src={item.imageUrl} alt={`${item.title} sponsor logo`} className="h-full w-full object-contain"/></div> : <div className="grid h-11 w-11 shrink-0 place-items-center bg-primary/10 text-primary"><Icon className="h-5 w-5"/></div>}<div className="min-w-0 flex-1"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold">{item.title}</h3><Badge variant="outline" className={tone[item.status]}>{item.status}</Badge></div><p className="mt-2 text-sm text-muted-foreground">{item.detail}</p></div></div><div className="mt-5 flex gap-2 border-t border-border pt-4"><Button variant="outline" className="flex-1 gap-2" onClick={()=>open(item)}><Pencil className="h-4 w-4"/>Edit</Button><Button variant="outline" size="icon" className="text-destructive" onClick={()=>setItems(old=>old.filter(x=>x.id!==item.id))}><Trash2 className="h-4 w-4"/></Button></div></Card>)}</div>
-  <Dialog open={!!edit} onOpenChange={v=>!v&&setEdit(null)}><DialogContent className="max-h-[90vh] overflow-y-auto rounded-sm sm:max-w-xl"><DialogHeader><DialogTitle>Manage {title.toLowerCase()}</DialogTitle><DialogDescription>Update this public Shogun record.</DialogDescription></DialogHeader>{edit&&<div className="space-y-4">{enableImage&&<div><Label>{imageLabel}</Label>{edit.imageUrl?<div className="mt-2 space-y-3"><div className="grid min-h-32 place-items-center border border-border bg-background p-5"><img src={edit.imageUrl} alt={`${edit.title || "Sponsor"} preview`} className="max-h-28 max-w-full object-contain"/></div><div className="flex flex-wrap gap-2"><Button asChild variant="outline" className="gap-2"><label className="cursor-pointer"><ImagePlus className="h-4 w-4"/>Replace image<input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={chooseImage}/></label></Button><Button type="button" variant="outline" className="gap-2 text-destructive" onClick={()=>setEdit({...edit,imageUrl:""})}><Trash2 className="h-4 w-4"/>Remove</Button></div></div>:<label className="mt-2 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-border bg-background p-6 text-center transition-colors hover:border-primary"><ImagePlus className="h-6 w-6 text-primary"/><span className="font-medium">Upload sponsor image</span><span className="text-xs text-muted-foreground">PNG, JPG or WebP up to 1 MB</span><input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={chooseImage}/></label>}</div>}<div><Label>Name</Label><Input className="mt-2" value={edit.title} onChange={e=>setEdit({...edit,title:e.target.value})}/></div><div><Label>Details</Label><Textarea className="mt-2" value={edit.detail} onChange={e=>setEdit({...edit,detail:e.target.value})}/></div><div><Label>Visibility</Label><Select value={edit.status} onValueChange={(status:Visibility)=>setEdit({...edit,status})}><SelectTrigger className="mt-2"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="Published">Published</SelectItem><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Hidden">Hidden</SelectItem></SelectContent></Select></div></div>}<DialogFooter><Button variant="outline" onClick={()=>setEdit(null)}>Cancel</Button><Button onClick={save}>Save record</Button></DialogFooter></DialogContent></Dialog></div>;
+  <Dialog open={!!edit} onOpenChange={v=>!v&&setEdit(null)}><DialogContent className="max-h-[90vh] overflow-y-auto rounded-sm sm:max-w-xl"><DialogHeader><DialogTitle>Manage {title.toLowerCase()}</DialogTitle><DialogDescription>Update this public Shogun record.</DialogDescription></DialogHeader>{edit&&<div className="space-y-4">{enableImage&&<div><Label>{imageLabel}</Label>{edit.imageUrl?<div className="mt-2 space-y-3"><div className="grid min-h-32 place-items-center border border-border bg-background p-5"><img src={edit.imageUrl} alt={`${edit.title || "Sponsor"} preview`} className="max-h-28 max-w-full object-contain"/></div><div className="flex flex-wrap gap-2"><Button asChild variant="outline" className="gap-2"><label className="cursor-pointer"><ImagePlus className="h-4 w-4"/>Replace image<input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={chooseImage}/></label></Button><Button type="button" variant="outline" className="gap-2 text-destructive" onClick={()=>setEdit({...edit,imageUrl:""})}><Trash2 className="h-4 w-4"/>Remove</Button></div></div>:<label className="mt-2 flex min-h-32 cursor-pointer flex-col items-center justify-center gap-2 border border-dashed border-border bg-background p-6 text-center transition-colors hover:border-primary"><ImagePlus className="h-6 w-6 text-primary"/><span className="font-medium">Upload sponsor image</span><span className="text-xs text-muted-foreground">PNG, JPG or WebP up to 5 MB</span><input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={chooseImage}/></label>}</div>}<div><Label>Name</Label><Input className="mt-2" value={edit.title} onChange={e=>setEdit({...edit,title:e.target.value})}/></div><div><Label>Details</Label><Textarea className="mt-2" value={edit.detail} onChange={e=>setEdit({...edit,detail:e.target.value})}/></div><div><Label>Visibility</Label><Select value={edit.status} onValueChange={(status:Visibility)=>setEdit({...edit,status})}><SelectTrigger className="mt-2"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="Published">Published</SelectItem><SelectItem value="Draft">Draft</SelectItem><SelectItem value="Hidden">Hidden</SelectItem></SelectContent></Select></div></div>}<DialogFooter><Button variant="outline" onClick={()=>setEdit(null)}>Cancel</Button><Button onClick={save}>Save record</Button></DialogFooter></DialogContent></Dialog></div>;
 }
 
 function EventManager({ items, setItems }: { items: ClanEvent[]; setItems: React.Dispatch<React.SetStateAction<ClanEvent[]>> }) {
@@ -69,13 +64,10 @@ function EventManager({ items, setItems }: { items: ClanEvent[]; setItems: React
   const chooseImage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !edit) return;
-    if (file.size > MAX_IMAGE_BYTES) {
-      toast({ title: "Image is too large", description: "Choose an image smaller than 1 MB, or link a hosted image.", variant: "destructive" });
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setEdit(current => current ? { ...current, imageUrl: String(reader.result) } : current);
-    reader.readAsDataURL(file);
+    // The image is stored on the API; the page keeps its link.
+    uploadFile(file)
+      .then(({ url }) => setEdit(current => current ? { ...current, imageUrl: url } : current))
+      .catch(error => toast({ title: "Upload failed", description: (error as Error).message, variant: "destructive" }));
   };
   const save = () => {
     if (!edit?.title.trim()) return;

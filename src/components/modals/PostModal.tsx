@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { CalendarDays, ImageIcon, Star, X } from "lucide-react";
+import { CalendarDays, ImageIcon, Star, Upload, X } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
-import type { NewsCategory } from "@/lib/api";
+import { uploadFile, type NewsCategory } from "@/lib/api";
 
 export type PostCategory = NewsCategory;
 
@@ -56,6 +56,25 @@ export function PostModal({ open, onOpenChange, post, onSave }: PostModalProps) 
   }, [post, open]);
 
   const [saving, setSaving] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageError, setImageError] = useState("");
+
+  // The image is stored on the API; the article keeps its link.
+  const uploadImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setImageError("");
+    setImageUploading(true);
+    try {
+      const { url } = await uploadFile(file);
+      setFormData(current => ({ ...current, image: url }));
+    } catch (error) {
+      setImageError((error as Error).message);
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -93,7 +112,9 @@ export function PostModal({ open, onOpenChange, post, onSave }: PostModalProps) 
             <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
               <div className="space-y-3">
                 <label><span className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Image URL</span><input value={formData.image} onChange={(event) => setFormData({ ...formData, image: event.target.value })} placeholder="https://..." className={fieldClass} /></label>
-                <p className="text-xs text-muted-foreground">Paste a secure https:// link or a site path such as /assets/banner.png. Use a wide 16:9 image; featured stories use a larger crop on the frontend.</p>
+                <label className="inline-flex h-10 cursor-pointer items-center gap-2 border border-border px-4 text-xs font-bold uppercase tracking-wide text-foreground hover:border-primary hover:text-primary"><Upload className="h-4 w-4" />{imageUploading ? "Uploading…" : "Upload image"}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" disabled={imageUploading} onChange={uploadImage} /></label>
+                {imageError && <p role="alert" className="text-xs text-destructive">{imageError}</p>}
+                <p className="text-xs text-muted-foreground">Upload an image, or paste a secure https:// link. Google Drive links work when the file is shared with anyone who has the link. Use a wide 16:9 image; featured stories use a larger crop on the frontend.</p>
               </div>
               <div className="flex aspect-video items-center justify-center overflow-hidden border border-border bg-card">
                 {formData.image ? <img src={formData.image} alt="Article preview" className="h-full w-full object-cover" /> : <ImageIcon className="h-9 w-9 text-muted-foreground" />}

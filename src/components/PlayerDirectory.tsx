@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Ban, MoreVertical, RotateCcw, Search, ShieldCheck, Users as UsersIcon } from "lucide-react";
+import { BadgeCheck, Ban, MoreVertical, RotateCcw, Search, ShieldCheck, ShieldOff, Users as UsersIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { api, type AdminUser } from "@/lib/api";
@@ -103,6 +103,14 @@ export function PlayerDirectory() {
     );
   };
 
+  const toggleVerified = (user: AdminUser) => {
+    const verified = !user.verified;
+    runChange(
+      verified ? `${user.ign} is verified` : `${user.ign} is no longer verified`,
+      () => api.patch(`/admin/users/${user.id}/verified`, { verified }),
+    );
+  };
+
   const filtered = statusFilter === "all" ? users : users.filter((user) => user.status === statusFilter);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
   const currentPage = Math.min(page, totalPages);
@@ -181,7 +189,7 @@ export function PlayerDirectory() {
                     <div className="flex items-center space-x-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-border bg-primary/10 text-xs font-black text-primary">{(user.ign || user.email).slice(0, 2).toUpperCase()}</div>
                       <div className="min-w-0">
-                        <p className="font-bold tracking-wide text-foreground">{user.ign}{isMe && <span className="ml-2 text-[9px] font-bold uppercase tracking-wider text-primary">You</span>}</p>
+                        <p className="flex items-center gap-1 font-bold tracking-wide text-foreground">{user.ign}{user.verified && <BadgeCheck className="h-3.5 w-3.5 text-primary" aria-label="Verified" />}{isMe && <span className="ml-2 text-[9px] font-bold uppercase tracking-wider text-primary">You</span>}</p>
                         <p className="truncate text-[11px] text-muted-foreground">{[user.fullName || user.name, user.email].filter(Boolean).join(" · ")}</p>
                       </div>
                     </div>
@@ -223,6 +231,9 @@ export function PlayerDirectory() {
                           </DropdownMenuSub>
                           <DropdownMenuItem onClick={() => toggleMultiTeam(user)} className="cursor-pointer">
                             <UsersIcon className="mr-2 h-4 w-4" />{user.multiTeamAllowed ? "Limit to one team" : "Allow multiple teams"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => toggleVerified(user)} className="cursor-pointer">
+                            {user.verified ? <><ShieldOff className="mr-2 h-4 w-4" />Remove verification</> : <><BadgeCheck className="mr-2 h-4 w-4" />Mark as verified</>}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {user.status === "active" ? (

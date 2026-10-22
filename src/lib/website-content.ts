@@ -6,7 +6,8 @@ export interface LegalVersion { version: number; updatedBy: string; date: string
 export interface LegalPage { id: string; title: string; slug: string; description: string; content: string; effectiveDate: string; updatedAt: string; updatedBy: string; status: LegalStatus; versions: LegalVersion[]; }
 export interface Job { id: string; title: string; department: string; location: string; type: string; shortDescription: string; description: string; responsibilities: string; requirements: string; applicationLink: string; status: "Draft" | "Open" | "Closed"; }
 export interface OrderedItem { id: string; title: string; description: string; details: string; active: boolean; order: number; }
-export interface PressAsset { id: string; name: string; category: string; dataUrl: string; active: boolean; }
+// dataUrl is the link to the stored file (older assets hold the file inline).
+export interface PressAsset { id: string; name: string; category: string; dataUrl: string; contentType?: string; active: boolean; }
 export interface BrandColor { id: string; name: string; hex: string; order: number; }
 export interface CompanyPage { id: "careers" | "sponsor-program" | "press-kit"; title: string; status: PublishStatus; updatedAt: string; }
 export interface Activity { id: string; admin: string; action: string; content: string; date: string; }

@@ -19,6 +19,7 @@ import MatchTab, { type StructureType } from "./TournamentMatch";
 import WatchTab from "./TournamentWatch";
 import ScheduleTab from "./TournamentSchedule";
 import { emptyWatchLinks, structureLabel } from "@/lib/competitions";
+import { uploadFile } from "@/lib/api";
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -69,6 +70,8 @@ export const Overview = ({
   const [mode, setMode] = useState<"Player" | "Team">(entityType === "League" ? "Team" : tournament?.mode || "Team");
   const [prize, setPrize] = useState(tournament?.prize || "0");
   const [bannerUrl, setBannerUrl] = useState(tournament?.bannerUrl || "");
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const [bannerError, setBannerError] = useState("");
   const [prizeAllocations, setPrizeAllocations] = useState<number[]>(tournament?.prizeAllocations || [60, 25, 15]);
   const [activeTab, setActiveTab] = useState("OVERVIEW");
   const [tournamentPhase, setTournamentPhase] = useState<"Registration" | "Drafting" | "Finalized">(
@@ -200,11 +203,20 @@ export const Overview = ({
     return `${position}${position % 10 === 1 ? "st" : position % 10 === 2 ? "nd" : position % 10 === 3 ? "rd" : "th"}`;
   };
 
-  const handleBannerUpload = (file?: File) => {
+  // The banner is stored on the API; the competition keeps only its link.
+  const handleBannerUpload = async (file?: File) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setBannerUrl(reader.result as string);
-    reader.readAsDataURL(file);
+    setBannerError("");
+    setBannerUploading(true);
+    try {
+      const { url } = await uploadFile(file);
+      setBannerUrl(url);
+      setLastSavedLabel(`Banner uploaded. Save or publish to apply it.`);
+    } catch (error) {
+      setBannerError((error as Error).message);
+    } finally {
+      setBannerUploading(false);
+    }
   };
 
   const scheduleRegistration = () => {
@@ -415,12 +427,12 @@ export const Overview = ({
                       <label className="w-full sm:w-56"><span className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Pay winners through</span><select value={prizeAllocations.length} onChange={event => setPaidPositions(Number(event.target.value))} className={inputClass}>{Array.from({ length: 15 }, (_, index) => index + 1).map(position => <option key={position} value={position}>{ordinal(position)} place</option>)}</select></label>
                     </div>
 
-                    <label className="block"><span className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Total prize pool</span><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span><input value={prize} onChange={(e) => setPrize(e.target.value)} className={`${inputClass} pl-8 text-lg font-semibold`} /></div></label>
+                    <label className="block"><span className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Total prize pool</span><div className="relative"><span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">₦</span><input value={prize} onChange={(e) => setPrize(e.target.value)} className={`${inputClass} pl-8 text-lg font-semibold`} /></div></label>
 
                     <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       {prizeAllocations.map((allocation, index) => (
                         <div key={index} className="border border-border bg-background p-4">
-                          <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{ordinal(index + 1)} place</span><span className="text-xs text-muted-foreground">${Math.round(numericPrize * allocation / 100).toLocaleString()}</span></div>
+                          <div className="mb-3 flex items-center justify-between"><span className="text-xs font-bold uppercase tracking-[0.14em] text-primary">{ordinal(index + 1)} place</span><span className="text-xs text-muted-foreground">₦{Math.round(numericPrize * allocation / 100).toLocaleString()}</span></div>
                           <div className="relative"><input aria-label={`${ordinal(index + 1)} place percentage`} type="number" min="0" max="100" value={allocation} onChange={event => updateAllocation(index, Number(event.target.value))} className={`${inputClass} pr-9 font-semibold`} /><span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span></div>
                         </div>
                       ))}
@@ -500,10 +512,16 @@ export const Overview = ({
                     <span className="text-xs font-normal normal-case tracking-normal text-muted-foreground">Recommended 1920 × 840px · JPG, PNG or WebP</span>
                   </button>
                 )}
+                {bannerUploading && <p className="mt-3 text-xs text-muted-foreground">Uploading banner…</p>}
+                {bannerError && <p role="alert" className="mt-3 text-xs text-destructive">{bannerError}</p>}
+                <label className="mt-4 block">
+                  <span className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Or paste an image link</span>
+                  <input value={bannerUrl} onChange={(e) => setBannerUrl(e.target.value.trim())} placeholder="https://…" className={inputClass} />
+                </label>
                 <input
                   id="banner-upload"
                   type="file"
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
                   className="hidden"
                   onChange={(e) => {
                     handleBannerUpload(e.target.files?.[0]);
@@ -539,7 +557,7 @@ export const Overview = ({
           onSave={tournament?.id ? onSaveWatchLinks : undefined}
         />
       )}
-      {activeTab === "SCHEDULE" && <ScheduleTab activeTab={activeTab} />}
+      {activeTab === "SCHEDULE" && tournament?.id && <ScheduleTab activeTab={activeTab} path={`${entityType === "League" ? "leagues" : "tournaments"}/${tournament.id}`} entityLabel={entityLabelLower} />}
       {activeTab === "SETTINGS" && <SettingsTab activeTab={activeTab} />}
       {activeTab === "STANDINGS" && <TournamentStandings activeTab={activeTab} entityType={entityType} competitionId={tournament?.id} mode={mode} structureType={tournamentStructure} />}
       {activeTab === "MATCHES" && <MatchTab activeTab={activeTab} entityType={entityType} competitionId={tournament?.id} mode={mode} tournamentPhase={tournamentPhase} onPhaseChange={setTournamentPhase} onStructureGenerated={setTournamentStructure} />}
