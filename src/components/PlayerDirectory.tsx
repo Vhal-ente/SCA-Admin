@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { BadgeCheck, Ban, MoreVertical, RotateCcw, Search, ShieldCheck, ShieldOff, Users as UsersIcon } from "lucide-react";
+import { Award, BadgeCheck, Ban, MoreVertical, RotateCcw, Search, ShieldCheck, ShieldOff, Users as UsersIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
 import { api, type AdminUser } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import AchievementAwards from "@/components/AchievementAwards";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -54,6 +55,7 @@ export function PlayerDirectory() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [pending, setPending] = useState<PendingChange | null>(null);
+  const [awarding, setAwarding] = useState<AdminUser | null>(null);
 
   const loadUsers = useCallback(async (query: string) => {
     try {
@@ -232,6 +234,9 @@ export function PlayerDirectory() {
                           <DropdownMenuItem onClick={() => toggleMultiTeam(user)} className="cursor-pointer">
                             <UsersIcon className="mr-2 h-4 w-4" />{user.multiTeamAllowed ? "Limit to one team" : "Allow multiple teams"}
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setAwarding(user)} className="cursor-pointer">
+                            <Award className="mr-2 h-4 w-4" />Achievements
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleVerified(user)} className="cursor-pointer">
                             {user.verified ? <><ShieldOff className="mr-2 h-4 w-4" />Remove verification</> : <><BadgeCheck className="mr-2 h-4 w-4" />Mark as verified</>}
                           </DropdownMenuItem>
@@ -285,6 +290,8 @@ export function PlayerDirectory() {
           </PaginationContent>
         </Pagination>
       </div>
+
+      <AchievementAwards user={awarding} onClose={() => setAwarding(null)} />
 
       <AlertDialog open={Boolean(pending)} onOpenChange={(open) => !open && setPending(null)}>
         <AlertDialogContent className="rounded-sm border-border bg-card text-foreground">

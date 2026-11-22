@@ -4,6 +4,7 @@ import { PlayerDirectory } from "@/components/PlayerDirectory";
 import { TeamDirectory } from "@/components/TeamDirectory";
 import { StaffAccess } from "@/components/StaffAccess";
 import ReportsDesk from "@/components/ReportsDesk";
+import CommunityDesk from "@/components/CommunityDesk";
 
 const Users = () => {
   const [activeTab, setActiveTab] = useState("players");
@@ -30,6 +31,7 @@ const Users = () => {
             <TabsTrigger value="teams" className="rounded-none border-b-2 border-transparent px-6 py-4 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary">Teams</TabsTrigger>
             <TabsTrigger value="admins" className="rounded-none border-b-2 border-transparent px-6 py-4 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary">Admins</TabsTrigger>
             <TabsTrigger value="reports" className="rounded-none border-b-2 border-transparent px-6 py-4 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary">Reports</TabsTrigger>
+            <TabsTrigger value="community" className="rounded-none border-b-2 border-transparent px-6 py-4 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground data-[state=active]:border-primary data-[state=active]:bg-primary/5 data-[state=active]:text-primary">Community</TabsTrigger>
           </TabsList>
         </div>
 
@@ -51,6 +53,11 @@ const Users = () => {
         {/* --- REPORTS PANEL TAB PANEL --- */}
         <TabsContent value="reports" className="space-y-6 outline-none focus:outline-none">
           <ReportsDesk />
+        </TabsContent>
+
+        {/* --- COMMUNITY MODERATION: recruitment listings and loadouts --- */}
+        <TabsContent value="community" className="space-y-6 outline-none focus:outline-none">
+          <CommunityDesk />
         </TabsContent>
       </Tabs>
     </div>

@@ -338,3 +338,105 @@ export type ApiDispute = {
   awayScore: number | null;
   createdAt: string;
 };
+
+export type ApiAchievement = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  role: string;
+  team: string;
+  competition: string;
+  rarity: "Common" | "Rare" | "Epic" | "Legendary";
+  awardSource: string;
+  awardedBy: string;
+  earnedOn: string;
+};
+
+export type ApiPerson = { id: string; ign: string; slug: string; avatarUrl: string };
+
+export type ApiModeratedPost = {
+  id: string;
+  teamId: string;
+  teamSlug: string;
+  teamName: string;
+  game: string;
+  title: string;
+  recruitmentFor: "Players" | "Coaches";
+  roles: string[];
+  openSlots: number;
+  status: "draft" | "open" | "closed" | "filled" | "expired";
+  createdAt: string;
+  applicationCount: number;
+  openReports: number;
+};
+
+export type ApiModerationReport = {
+  id: string;
+  subjectId: string;
+  subject: string;
+  subjectBy: string;
+  subjectSlug: string;
+  reason: string;
+  details: string;
+  status: "open" | "reviewing" | "resolved" | "dismissed";
+  reporter: ApiPerson | null;
+  createdAt: string;
+  resolvedAt: string;
+};
+
+export type ApiLoadout = {
+  id: string;
+  slug: string;
+  title: string;
+  game: string;
+  loadoutType: string;
+  status: "published" | "draft" | "hidden" | "removed" | "archived";
+  featured: boolean;
+  removedReason?: string;
+  author: ApiPerson | null;
+  up: number;
+  down: number;
+  reports: number;
+  createdAt: string;
+};
+
+export type MasterEvent = {
+  kind: "milestone" | "match";
+  id: string;
+  competitionKind: "tournament" | "league";
+  competitionId: string;
+  competitionSlug: string;
+  competition: string;
+  game: string;
+  bannerUrl: string;
+  title: string;
+  detail: string;
+  date: string;
+  time: string;
+  timezone: string;
+  venue: string;
+  status: string;
+  streamUrl: string;
+  homeScore: number | null;
+  awayScore: number | null;
+};
+
+export type MasterSchedule = {
+  live: MasterEvent[];
+  upcoming: MasterEvent[];
+  past: MasterEvent[];
+  competitions: { id: string; kind: "tournament" | "league"; slug: string; name: string; game: string }[];
+};
+
+export type EmailSettings = {
+  configured: boolean;
+  host: string;
+  port: number;
+  security: string;
+  username: string;
+  fromEmail: string;
+  fromName: string;
+  replyTo: string;
+  categories: Record<string, boolean>;
+};
